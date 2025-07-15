@@ -10,7 +10,9 @@ namespace MedicaiFacility.Service.IService
     public interface IMedicalExpertScheduleService
     {
         List<MedicalExpertSchedule> GetSchedulesByExpertId(int expertId);
-        void AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
+
+        MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
+        MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule);
         void DeleteSchedulesByExpertId(int expertId);
     }
 }

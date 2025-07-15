@@ -18,9 +18,9 @@ namespace MedicaiFacility.Service
             _medicalHistoryRepository = medicalHistoryRepository;
         }
 
-        public void Create(MedicalHistory medicalHistory)
+        public MedicalHistory Create(MedicalHistory medicalHistory)
         {
-            _medicalHistoryRepository.Create(medicalHistory);  
+          return  _medicalHistoryRepository.Create(medicalHistory);  
         }
 
         public void DeleteById(int id)
@@ -28,9 +28,19 @@ namespace MedicaiFacility.Service
             _medicalHistoryRepository.DeleteById(id);
         }
 
+        public MedicalHistory ExistingMedicalHistory(int appointmentId)
+        {
+            return _medicalHistoryRepository.ExistingMedicalHistory(appointmentId);
+        }
+
         public List<MedicalHistory> GetAll()
         {
          return _medicalHistoryRepository.GetAll();
+        }
+
+        public List<MedicalHistory> GetAllByUserId(int userId)
+        {
+            return _medicalHistoryRepository.GetAllByUserId(userId);
         }
 
         public (List<MedicalHistory> list, int totalItems) GetALlPagainations(int pg, int pageSize)
@@ -53,9 +63,9 @@ namespace MedicaiFacility.Service
             return _medicalHistoryRepository.GetById(id);
         }
 
-        public void Update(MedicalHistory medicalHistory)
+        public MedicalHistory Update(MedicalHistory medicalHistory)
         {
-            _medicalHistoryRepository.Update(medicalHistory);   
+          return  _medicalHistoryRepository.Update(medicalHistory);   
         }
     }
 }

@@ -11,7 +11,7 @@ namespace MedicaiFacility.DataAccess.IRepostory
 	{
 		List<Transaction> GetAll();
 		Transaction GetById(int id);
-		void Create(Transaction transaction);
+		Transaction Create(Transaction transaction);
 		void Update(Transaction transaction);
 		void DeleteById(int id);
 		(List<Transaction>, int totalItems) GetListByPagination(int pg, int pagesize);

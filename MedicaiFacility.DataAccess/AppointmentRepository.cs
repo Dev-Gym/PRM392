@@ -17,10 +17,19 @@ namespace MedicaiFacility.DataAccess
 		{
 			_context = context;
 		}
-		public void Create(Appointment appointment)
+		public Appointment Create(Appointment appointment)
 		{
-			_context.Appointments.Add(appointment);	
-			_context.SaveChanges();
+			try
+			{
+				_context.ChangeTracker.Clear();
+				_context.Appointments.Add(appointment);
+				_context.SaveChanges();
+				return appointment;
+			}
+			catch (Exception ex) {
+				Console.WriteLine(ex.Message);
+				return null;
+			}
 		}
 
 		public void DeleteById(int id)
@@ -60,18 +69,21 @@ namespace MedicaiFacility.DataAccess
 		}
 
 		public List<Appointment> GetAllByExpertId(int expertId) => _context.Appointments.Where(x => x.ExpertId == expertId).ToList();
-		public void Update(Appointment appointment)
+		
+		public Appointment Update(Appointment appointment)
 		{
 			_context.Appointments.Update(appointment);
 			_context.SaveChanges();
+			return appointment;
 		}
 
 
         public (List<Appointment> list, int totalItems) GetALlPagainationsByPatientId(int pg, int pageSize,int patientId)
         {
-            var list = _context.Appointments.Where(x=>x.PatientId== patientId).OrderByDescending(x => x.AppointmentId).Include(x => x.Transaction)
-                .Include(x => x.Expert).ThenInclude(x => x.Expert).Include(x => x.Patient).ThenInclude(x => x.PatientNavigation).Include(x => x.Facility)
-                .ToList();
+			var list = _context.Appointments.Where(x => x.PatientId == patientId).OrderByDescending(x => x.AppointmentId).Include(x => x.Transaction)
+				.Include(x => x.Expert).ThenInclude(x => x.Expert).Include(x => x.Patient).ThenInclude(x => x.PatientNavigation).Include(x => x.Facility)
+				.ToList();
+			//var list = _context.Appointments.ToList();
             var total = list.Count();
 			
             int skip = (pg - 1) * pageSize;
@@ -90,6 +102,17 @@ namespace MedicaiFacility.DataAccess
             var data = list.Skip(skip).Take(pageSize).ToList();
             return (data, total);
         }
-		
+        public List<Appointment>  GetALlAppointmentByUserId(int userID)
+        {
+			var list = _context.Appointments.AsQueryable();
+			if (userID>0)
+			{
+				list = list.Where(x => x.ExpertId == userID || x.PatientId == userID);
+
+            }
+             list = list.OrderByDescending(x => x.AppointmentId);
+          
+            return list.ToList();
+        }
     }
 }

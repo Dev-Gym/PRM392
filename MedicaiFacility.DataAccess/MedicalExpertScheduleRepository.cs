@@ -19,12 +19,14 @@ namespace MedicaiFacility.Repository
 
         public IEnumerable<MedicalExpertSchedule> GetSchedulesByExpertId(int expertId)
         {
-            return _context.MedicalExpertSchedules
-                .Where(s => s.ExpertId == expertId)
-                .ToList();
+            var list = _context.MedicalExpertSchedules.AsQueryable();
+            if (expertId > 0) {
+                list = list.Where(x => x.ExpertId == expertId);
+            }
+            return list;
         }
 
-        public void AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
+        public MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
         {
             Console.WriteLine($"Attempting to add schedule: ExpertId={schedule.ExpertId}, Day={schedule.DayOfWeek}");
             try
@@ -32,6 +34,7 @@ namespace MedicaiFacility.Repository
                 _context.MedicalExpertSchedules.Add(schedule);
                 _context.SaveChanges();
                 Console.WriteLine($"Schedule saved successfully with ScheduleId: {schedule.ScheduleId}");
+                return schedule;
             }
             catch (Exception ex)
             {
@@ -66,5 +69,13 @@ namespace MedicaiFacility.Repository
                 throw;
             }
         }
+
+        public MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule)
+        {
+            _context.MedicalExpertSchedules.Update(schedule);
+            _context.SaveChanges() ;
+            return schedule;
+        }
     }
+  
 }

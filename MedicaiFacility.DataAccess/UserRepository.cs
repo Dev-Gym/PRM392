@@ -104,5 +104,17 @@ namespace MedicaiFacility.DataAccess
             }
             return _context.Users.FirstOrDefault(u => u.UserId == patient.PatientId);
         }
+
+        public IEnumerable<User> GetAllExpertMedical()
+        {
+            return _context.Users.Where(x=>x.UserType== "MedicalExpert").OrderByDescending(x => x.UserId).ToList();
+
+        }
+
+        public IEnumerable<User> GetAllPatient()
+        {
+            return _context.Users.Where(x => x.UserType == "Patient").OrderByDescending(x => x.UserId).ToList();
+
+        }
     }
 }

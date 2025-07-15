@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MedicaiFacility.BusinessObject;
 
@@ -20,10 +21,10 @@ public partial class MedicalHistory
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
+    [JsonIgnore]
     public virtual Appointment Appointment { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<HealthRecord> HealthRecords { get; set; } = new List<HealthRecord>();
-
+    [JsonIgnore]
     public virtual RatingsAndFeedback RatingsAndFeedback { get; set; }
 }

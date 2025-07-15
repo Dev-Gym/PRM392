@@ -52,10 +52,12 @@ namespace MedicaiFacility.DataAccess
 			return (data, total);
 		}
 
-		public void Create(Transaction transaction)
+		public Transaction Create(Transaction transaction)
 		{
+			
 			_Context.Transactions.Add(transaction);
 			_Context.SaveChanges();
+			return transaction;
 		}
 
 		public (List<Transaction>, int totalItems) GetListByPaginationWithPatientId(int pg, int pageSize,int patientId) {

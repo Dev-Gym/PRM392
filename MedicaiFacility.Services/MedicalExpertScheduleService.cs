@@ -23,14 +23,20 @@ namespace MedicaiFacility.Service
             return _repository.GetSchedulesByExpertId(expertId).ToList();
         }
 
-        public void AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
+        public MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
         {
-            _repository.AddMedicalExpertSchedule(schedule);
+            return _repository.AddMedicalExpertSchedule(schedule);
         }
 
         public void DeleteSchedulesByExpertId(int expertId)
         {
             _repository.DeleteSchedulesByExpertId(expertId);
+        }
+
+  
+        public MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule)
+        {
+            return _repository.UpdateMedicalExpertSchedule(schedule);
         }
     }
 }

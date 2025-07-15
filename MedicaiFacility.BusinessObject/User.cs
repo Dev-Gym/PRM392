@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MedicaiFacility.BusinessObject;
 
@@ -30,18 +31,18 @@ public partial class User
     public string BankAccount { get; set; }
 
     public bool? Status { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<Conversation> ConversationAdmins { get; set; } = new List<Conversation>();
-
+    [JsonIgnore]
     public virtual ICollection<Conversation> ConversationPatients { get; set; } = new List<Conversation>();
-
+    [JsonIgnore]
     public virtual ICollection<HealthArticle> HealthArticles { get; set; } = new List<HealthArticle>();
-
+    [JsonIgnore]
     public virtual MedicalExpert MedicalExpert { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
-
+    [JsonIgnore]
     public virtual Patient Patient { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 }

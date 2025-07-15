@@ -18,6 +18,8 @@ namespace MedicaiFacility.DataAccess.IRepostory
         bool ValidatePassword(string email, string password);
         void ChangePassword(string email, string newPassword);
         User GetUserByPatientId(int patientId);
+        IEnumerable<User> GetAllExpertMedical();
+        IEnumerable<User> GetAllPatient();
 
     }
 }

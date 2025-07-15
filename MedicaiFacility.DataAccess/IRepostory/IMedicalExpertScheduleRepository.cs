@@ -10,7 +10,8 @@
     public interface IMedicalExpertScheduleRepository
     {
         IEnumerable<MedicalExpertSchedule> GetSchedulesByExpertId(int expertId);
-        void AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
+        MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
+        MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule);
         void DeleteSchedulesByExpertId(int expertId);
     }
 }

@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MedicaiFacility.BusinessObject;
 
@@ -28,14 +29,14 @@ public partial class Appointment
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
+    [JsonIgnore]
     public virtual MedicalExpert Expert { get; set; }
-
+    [JsonIgnore]
     public virtual MedicalFacility Facility { get; set; }
-
+    [JsonIgnore]
     public virtual MedicalHistory MedicalHistory { get; set; }
-
+    [JsonIgnore]
     public virtual Patient Patient { get; set; }
-
+    [JsonIgnore]
     public virtual Transaction Transaction { get; set; }
 }

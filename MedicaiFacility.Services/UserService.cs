@@ -106,5 +106,14 @@ namespace MedicaiFacility.Service
             return _userRepository.GetUserByPatientId(patientId);
         }
 
+        public IEnumerable<User> GetAllExpertMedical()
+        {
+            return _userRepository.GetAllExpertMedical();
+        }
+
+        public IEnumerable<User> GetAllPatient()
+        {
+          return _userRepository.GetAllPatient();
+        }
     }
 }

@@ -17,10 +17,11 @@ namespace MedicaiFacility.DataAccess
         {
             _Context = Context;
         }
-        public void Create(MedicalHistory medicalHistory)
+        public MedicalHistory Create(MedicalHistory medicalHistory)
         {
            _Context.MedicalHistories.Add(medicalHistory);
             _Context.SaveChanges();
+            return medicalHistory;
         }
 
         public void DeleteById(int id)
@@ -56,10 +57,11 @@ namespace MedicaiFacility.DataAccess
               .Include(x => x.Appointment).ThenInclude(x => x.Patient).ThenInclude(x => x.PatientNavigation).FirstOrDefault(x => x.HistoryId==id);
         }
 
-        public void Update(MedicalHistory medicalHistory)
+        public MedicalHistory Update(MedicalHistory medicalHistory)
         {
            _Context.MedicalHistories.Update(medicalHistory);
             _Context.SaveChanges(); 
+            return medicalHistory;
         }
 
         public (List<MedicalHistory> list, int totalItems) GetALlPagainationsByPatientId(int pg, int pageSize,int patientId)
@@ -84,6 +86,23 @@ namespace MedicaiFacility.DataAccess
             int skipItem = (pg - 1) * pageSize;
             //var data = list.Skip(skipItem).Take(pager.Pagesize).ToList();
             return (list, total);
+        }
+
+        public List<MedicalHistory> GetAllByUserId(int userId)
+        {
+            var medicalHistories = _Context.MedicalHistories
+          .Where(m => _Context.Appointments
+              .Where(a => userId <= 0 || a.PatientId == userId || a.ExpertId == userId)
+              .Select(a => a.AppointmentId).ToList()
+              .Contains((int)m.AppointmentId))
+          .ToList();
+
+            return medicalHistories;
+        }
+
+        public MedicalHistory ExistingMedicalHistory(int appointmentId)
+        {
+            return _Context.MedicalHistories.FirstOrDefault(x => x.AppointmentId == appointmentId);
         }
     }
 }
