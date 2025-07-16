@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="24dp">
+
+    <EditText
+        android:id="@+id/edtDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Ngày khám (yyyy-MM-dd)"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <EditText
+        android:id="@+id/edtStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Trạng thái (Pending, Confirmed,...)"
+        app:layout_constraintTop_toBottomOf="@id/edtDate"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/btnBook"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Đặt lịch"
+        app:layout_constraintTop_toBottomOf="@id/edtStatus"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnCancel"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="8dp"/>
+
+    <Button
+        android:id="@+id/btnCancel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Hủy"
+        app:layout_constraintTop_toBottomOf="@id/edtStatus"
+        app:layout_constraintStart_toEndOf="@id/btnBook"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="8dp"/>
+</androidx.constraintlayout.widget.ConstraintLayout> 
