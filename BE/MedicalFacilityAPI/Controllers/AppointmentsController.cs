@@ -12,11 +12,12 @@ namespace MedicalFacilityAPI.Controllers
     {
         private readonly IAppointmentService _appointmentService;
         private readonly IMedicalExpertScheduleService _medicalExpertScheduleService;
-    
-        public AppointmentsController(IAppointmentService appointmentService, IMedicalExpertScheduleService medicalExpertScheduleService)
+        private readonly IMedicalHistoryService _medicalHistoryService;
+        public AppointmentsController(IAppointmentService appointmentService, IMedicalExpertScheduleService medicalExpertScheduleService, IMedicalHistoryService medicalHistoryService)
         {
             _appointmentService = appointmentService;
             _medicalExpertScheduleService = medicalExpertScheduleService;
+            _medicalHistoryService = medicalHistoryService;
         }
 
         // Đặt lịch hẹn mới
@@ -69,7 +70,8 @@ namespace MedicalFacilityAPI.Controllers
         public ActionResult<Appointment> UpdateConfirm(int appointmentId)
         {
             var existingAppointment = _appointmentService.GetById(appointmentId);
-
+            if(existingAppointment == null) return NotFound();  
+            var existingMedicalHistory = 
             existingAppointment.Status = "Confirmed";
             existingAppointment.UpdatedAt = DateTime.Now;
 

@@ -40,7 +40,11 @@ public interface ApiService {
 
     @PUT("api/Appointments/{id}")
     Call<Appointment> updateAppointment(@Path("id") int id, @Body Appointment appointment);
+    @PUT("api/Appointments/confirm/{appointmentId}")
+    Call<Appointment> confirmAppointment(@Path("appointmentId") int appointmentId);
 
+    @PUT("api/Appointments/cancelled/{appointmentId}")
+    Call<Appointment> cancelAppointment(@Path("appointmentId") int appointmentId);
     @PUT("api/Appointments/delete/{id}")
     Call<Appointment> deleteAppointment(@Path("id") int id);
 
