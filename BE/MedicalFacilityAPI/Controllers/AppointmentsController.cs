@@ -21,7 +21,7 @@ namespace MedicalFacilityAPI.Controllers
         [HttpPost]
         public ActionResult<string> Create([FromBody] RequestAppointment req)
         {
-            var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.scheduleId, req.StartDate,  req.EndDate);
+            var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.ScheduleId, req.StartDate,  req.EndDate);
             if (!checkValidSchedule.Equals("true")) {
                 return checkValidSchedule;
             }
@@ -41,19 +41,35 @@ namespace MedicalFacilityAPI.Controllers
             return Ok("Tạo thành công");
         }
         [HttpPut("{appointmentId:int}")]
-        public ActionResult<Appointment> Update(int appointmentId, [FromBody] RequestAppointment req) {
+        public ActionResult<Appointment> Update(int appointmentId, [FromBody] RequestUpdateAppointment req) {
             var existingAppointment = _appointmentService.GetById(appointmentId);
 
-            existingAppointment.PatientId = req.PatientId;
-            existingAppointment.ExpertId = req.ExpertId;
-            existingAppointment.FacilityId = req.FacilityId;
             existingAppointment.Note = req.Note;
-            existingAppointment.StartDate = req.StartDate;
-            existingAppointment.EndDate = req.EndDate;
-            existingAppointment.Status = "Pending";
             existingAppointment.UpdatedAt = DateTime.Now;
             
           var result =   _appointmentService.Update(existingAppointment);
+            return Ok(result);
+        }
+        [HttpPut("confirm/{appointmentId:int}")]
+        public ActionResult<Appointment> UpdateConfirm(int appointmentId)
+        {
+            var existingAppointment = _appointmentService.GetById(appointmentId);
+
+            existingAppointment.Status = "Confirmed";
+            existingAppointment.UpdatedAt = DateTime.Now;
+
+            var result = _appointmentService.Update(existingAppointment);
+            return Ok(result);
+        }
+        [HttpPut("cancelled/{appointmentId:int}")]
+        public ActionResult<Appointment> UpdateCancelled(int appointmentId)
+        {
+            var existingAppointment = _appointmentService.GetById(appointmentId);
+
+            existingAppointment.Status = "Cancelled";
+            existingAppointment.UpdatedAt = DateTime.Now;
+
+            var result = _appointmentService.Update(existingAppointment);
             return Ok(result);
         }
         [HttpGet]
@@ -91,6 +107,14 @@ namespace MedicalFacilityAPI.Controllers
 
         public DateTime EndDate { get; set; }
 
-        public string Status { get; set; }
+    }
+    public class RequestUpdateAppointment
+    {
+   
+
+        public string Note { get; set; }
+
+  
+
     }
 } 
