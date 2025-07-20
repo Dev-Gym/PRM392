@@ -18,5 +18,10 @@ namespace MedicalFacilityAPI.Controllers
         public ActionResult<List<FacilityDepartment>> Get() {
             return Ok( _facilityService.GetAllMedicalFacility());
         }
+        [HttpGet("expert/{experId:int}")]
+        public ActionResult<FacilityDepartment> GetDetailByExperId(int experId)
+        {
+            return Ok(_facilityService.FindByExperId(experId));
+        }
     }
 }

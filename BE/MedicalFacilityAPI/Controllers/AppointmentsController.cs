@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using MedicaiFacility.Services;
 using MedicaiFacility.BusinessObject;
 using MedicaiFacility.Service.IService;
+using MedicaiFacility.Services;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MedicalFacilityAPI.Controllers
 {
@@ -11,6 +12,7 @@ namespace MedicalFacilityAPI.Controllers
     {
         private readonly IAppointmentService _appointmentService;
         private readonly IMedicalExpertScheduleService _medicalExpertScheduleService;
+    
         public AppointmentsController(IAppointmentService appointmentService, IMedicalExpertScheduleService medicalExpertScheduleService)
         {
             _appointmentService = appointmentService;
@@ -19,11 +21,19 @@ namespace MedicalFacilityAPI.Controllers
 
         // Đặt lịch hẹn mới
         [HttpPost]
-        public ActionResult<string> Create([FromBody] RequestAppointment req)
+        public ActionResult<Appointment> Create([FromBody] RequestAppointment req)
         {
-            var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.ScheduleId, req.StartDate,  req.EndDate);
+
+            req.EndDate = req.StartDate.AddMinutes(30);
+            var schedule = _medicalExpertScheduleService.GetSchedulesByExpertId(req.ExpertId).FirstOrDefault(x=>x.ScheduleId==req.ScheduleId);
+            if (schedule != null) {
+                var date = schedule.StartDate.Date;
+                req.StartDate = date+ (req.StartDate).TimeOfDay;
+                req.EndDate = date+ (req.EndDate).TimeOfDay;
+            }
+           var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.ScheduleId, req.StartDate,  req.EndDate);
             if (!checkValidSchedule.Equals("true")) {
-                return checkValidSchedule;
+                return null;
             }
             var newAppointment = new Appointment { 
                 PatientId = req.PatientId,
@@ -38,16 +48,21 @@ namespace MedicalFacilityAPI.Controllers
             };
           var result=   _appointmentService.Create(newAppointment);
             if (result == null) return BadRequest("tạo thất bại");
-            return Ok("Tạo thành công");
+            return Ok(result);
         }
         [HttpPut("{appointmentId:int}")]
         public ActionResult<Appointment> Update(int appointmentId, [FromBody] RequestUpdateAppointment req) {
             var existingAppointment = _appointmentService.GetById(appointmentId);
+            
+            
+            if (existingAppointment.Status == "Pending") {
+                existingAppointment.StartDate = req.StartDate;
+                existingAppointment.EndDate = req.EndDate;
+            }
 
             existingAppointment.Note = req.Note;
             existingAppointment.UpdatedAt = DateTime.Now;
-            
-          var result =   _appointmentService.Update(existingAppointment);
+            var result =   _appointmentService.Update(existingAppointment);
             return Ok(result);
         }
         [HttpPut("confirm/{appointmentId:int}")]
@@ -110,11 +125,19 @@ namespace MedicalFacilityAPI.Controllers
     }
     public class RequestUpdateAppointment
     {
-   
+
+        public int ScheduleId { get; set; }
+        public int PatientId { get; set; }
+
+        public int ExpertId { get; set; }
+
+        public int FacilityId { get; set; }
 
         public string Note { get; set; }
 
-  
+        public DateTime StartDate { get; set; }
+
+        public DateTime EndDate { get; set; }
 
     }
 } 

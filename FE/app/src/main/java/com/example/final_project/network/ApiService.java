@@ -1,6 +1,8 @@
 package com.example.final_project.network;
 
 import com.example.final_project.model.*;
+import com.example.final_project.model.AppointmentCreateRequest;
+
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -25,8 +27,9 @@ public interface ApiService {
     @GET("api/Appointments")
     Call<List<Appointment>> getAppointments();
 
+    // CREATE appointment with AppointmentCreateRequest
     @POST("api/Appointments")
-    Call<Appointment> createAppointment(@Body Appointment appointment);
+    Call<Appointment> createAppointment(@Body AppointmentCreateRequest request);
 
     @GET("api/Appointments")
     Call<List<Appointment>> getAppointmentsByUserId(@Query("userId") int userId);
@@ -67,7 +70,14 @@ public interface ApiService {
     @DELETE("api/Schedule/{id}")
     Call<Void> deleteSchedule(@Path("id") int id);
 
-    // Expert Schedules - NEW API
+    @GET("api/Schedule/{id}")
+    Call<Schedule> getScheduleById(@Path("id") int scheduleId);
+
+    // Expert Schedules
     @GET("api/Schedule")
-        Call<List<ExpertSchedule>> getExpertSchedules(@Query("expertId") int expertId);
+    Call<List<ExpertSchedule>> getExpertSchedules(@Query("expertId") int expertId);
+
+    // Facilities by Expert - Returns single Facility object
+    @GET("api/Facility/expert/{expertId}")
+    Call<Facility> getFacilityByExpert(@Path("expertId") int expertId);
 }

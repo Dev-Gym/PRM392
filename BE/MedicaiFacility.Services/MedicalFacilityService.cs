@@ -60,5 +60,10 @@ namespace MedicaiFacility.Service
         {
             return _medicalFacilityRepository.GetDepartmentIdsByFacilityId(facilityId);
         }
+
+        public MedicalFacility FindByExperId(int experId)
+        {
+            return _medicalFacilityRepository.FindByExperId(experId);
+        }
     }
 }

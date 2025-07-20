@@ -60,7 +60,7 @@ namespace MedicaiFacility.Service
             }
 
             // Kiểm tra startTime nằm trong giờ làm việc bác sĩ
-            if (startTime < item.StartDate || startTime > item.EndDate)
+            if (startTime< item.StartDate || startTime > item.EndDate)
             {
                 return "Thời gian bắt đầu cuộc hẹn phải nằm trong giờ làm việc của bác sĩ.";
             }

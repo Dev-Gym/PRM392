@@ -179,5 +179,12 @@ namespace MedicaiFacility.DataAccess
                 .Select(fd => fd.DepartmentId)
                 .ToList();
         }
+
+        public MedicalFacility FindByExperId(int experId)
+        {
+            var expert = _Context.MedicalExperts.FirstOrDefault(x => x.ExpertId == experId);
+            var item = _Context.MedicalFacilities.FirstOrDefault(x => x.FacilityId == expert.FacilityId);
+            return item;
+        }
     }
 }

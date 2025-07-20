@@ -1,7 +1,5 @@
 package com.example.final_project.model;
 
-
-
 import com.google.gson.annotations.SerializedName;
 
 public class ExpertSchedule {
@@ -133,17 +131,18 @@ public class ExpertSchedule {
         }
     }
 
-    // toString method để debug
+    // Add toString method for Appointment
     @Override
     public String toString() {
         return "ExpertSchedule{" +
                 "scheduleId=" + scheduleId +
                 ", expertId=" + expertId +
                 ", dayOfWeek='" + dayOfWeek + '\'' +
-                ", startDate='" + startDate + '\'' +
-                ", endDate='" + endDate + '\'' +
-                ", isActive=" + isActive +
                 ", workingHours='" + getWorkingHours() + '\'' +
+                ", isActive=" + isActive +
                 '}';
     }
+
+    // toString method để debug
+
 }

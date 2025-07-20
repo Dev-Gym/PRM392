@@ -16,7 +16,7 @@ public partial class MedicalExpertSchedule
 
     public DateTime StartDate { get; set; }
 
-    public DateTime? EndDate { get; set; }
+    public DateTime EndDate { get; set; }
 
     public bool? IsActive { get; set; }
     [JsonIgnore]

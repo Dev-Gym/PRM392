@@ -3,24 +3,57 @@ package com.example.final_project;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.TextView;
+import android.widget.Toast;
 import com.example.final_project.model.Appointment;
+import com.example.final_project.model.AppointmentCreateRequest;
+import com.example.final_project.model.ExpertSchedule;
+import com.example.final_project.model.Facility;
+import com.example.final_project.model.Schedule;
 import com.example.final_project.network.ApiService;
 import com.example.final_project.network.RetrofitClient;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import com.google.gson.Gson;
-import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class BookingDialog extends Dialog {
+    private static final String TAG = "BookingDialog";
+
     private int doctorId;
     private String token;
     private BookingCallback callback;
-    private Appointment appointmentToEdit; // null nếu là tạo mới
+    private Appointment appointmentToEdit;
+
+    // UI Components
+    private EditText edtPatientId, edtNote, edtHour;
+    private TextView tvExpertId, tvSelectedDate, tvWorkingHours;
+    private Spinner spinnerSchedule, spinnerFacility;
+    private Button btnBook, btnCancel;
+    private TextView tvDialogTitle;
+
+    // Data
+    private List<ExpertSchedule> availableSchedules = new ArrayList<>();
+    private List<Facility> availableFacilities = new ArrayList<>();
+    private ArrayAdapter<String> scheduleAdapter;
+    private ArrayAdapter<String> facilityAdapter;
+    private ExpertSchedule selectedSchedule = null;
+    private Facility selectedFacility = null;
+    private Schedule selectedScheduleDetail = null;
 
     public interface BookingCallback {
         void onBookingResult(boolean success);
@@ -31,7 +64,7 @@ public class BookingDialog extends Dialog {
     }
 
     public BookingDialog(Context context, int doctorId, String token, BookingCallback callback,
-            Appointment appointmentToEdit) {
+                         Appointment appointmentToEdit) {
         super(context);
         this.doctorId = doctorId;
         this.token = token;
@@ -42,142 +75,620 @@ public class BookingDialog extends Dialog {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.dialog_booking);
+        setContentView(R.layout.dialog_booking_new);
 
-        // Set width dialog là MATCH_PARENT
         if (getWindow() != null) {
-            getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            getWindow().setLayout(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
         }
 
-        EditText edtReq = findViewById(R.id.edtReq);
-        EditText edtDate = findViewById(R.id.edtDate);
-        EditText edtStatus = findViewById(R.id.edtStatus);
-        Button btnBook = findViewById(R.id.btnBook);
-        Button btnCancel = findViewById(R.id.btnCancel);
-        TextView tvDialogTitle = findViewById(R.id.tvDialogTitle);
+        initViews();
+        setupSpinners();
+        setupForm();
+        loadAvailableFacilities();
+        loadAvailableSchedules();
+        setupClickListeners();
+        setupHourValidation();
+    }
 
-        if (appointmentToEdit != null) {
-            btnBook.setText("Lưu");
-            tvDialogTitle.setText("Sửa lịch hẹn");
-            edtReq.setEnabled(false);
-            edtReq.setFocusable(false);
-            if (appointmentToEdit.getReq() != null && !appointmentToEdit.getReq().isEmpty())
-                edtReq.setText(appointmentToEdit.getReq());
-            else
-                edtReq.setText("Không rõ người đặt");
-            if (appointmentToEdit.getStartDate() != null && appointmentToEdit.getStartDate().length() >= 10)
-                edtDate.setText(appointmentToEdit.getStartDate().substring(0, 10));
-            if (appointmentToEdit.getStatus() != null)
-                edtStatus.setText(appointmentToEdit.getStatus());
-        } else {
-            btnBook.setText("Đặt lịch");
-            tvDialogTitle.setText("Đặt lịch mới");
-            edtReq.setEnabled(true);
-            edtReq.setFocusable(true);
-            edtReq.setText("");
-        }
+    private void initViews() {
+        tvDialogTitle = findViewById(R.id.tvDialogTitle);
+        tvExpertId = findViewById(R.id.tvExpertId);
+        edtPatientId = findViewById(R.id.edtPatientId);
+        spinnerFacility = findViewById(R.id.spinnerFacility);
+        edtNote = findViewById(R.id.edtNote);
+        spinnerSchedule = findViewById(R.id.spinnerSchedule);
+        tvSelectedDate = findViewById(R.id.tvSelectedDate);
+        tvWorkingHours = findViewById(R.id.tvWorkingHours);
+        edtHour = findViewById(R.id.edtHour);
+        btnBook = findViewById(R.id.btnBook);
+        btnCancel = findViewById(R.id.btnCancel);
 
-        btnBook.setOnClickListener(new View.OnClickListener() {
+        Log.d(TAG, "All views initialized successfully");
+    }
+
+    private void setupSpinners() {
+        // Setup Schedule Spinner
+        List<String> scheduleDisplayList = new ArrayList<>();
+        scheduleDisplayList.add("Đang tải lịch làm việc...");
+
+        scheduleAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, scheduleDisplayList);
+        scheduleAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSchedule.setAdapter(scheduleAdapter);
+
+        // Setup Facility Spinner
+        List<String> facilityDisplayList = new ArrayList<>();
+        facilityDisplayList.add("Đang tải cơ sở y tế...");
+
+        facilityAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, facilityDisplayList);
+        facilityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerFacility.setAdapter(facilityAdapter);
+
+        // Setup spinner selection listeners
+        spinnerSchedule.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View v) {
-                String req = edtReq.getText().toString().trim();
-                String dateInput = edtDate.getText().toString().trim(); // "19-07-2025"
-                String[] parts = dateInput.split("-");
-                String date = parts.length == 3 ? (parts[2] + "-" + parts[1] + "-" + parts[0]) : dateInput; // "2025-07-19"
-                String status = edtStatus.getText().toString();
-                Appointment appointment = new Appointment();
-                appointment.setPatientId(1); // TODO: Lấy patientId thực tế
-                appointment.setExpertId(doctorId);
-                appointment.setFacilityId(1); // TODO: Lấy facilityId thực tế nếu cần
-                appointment.setNote(""); // TODO: Cho phép nhập note nếu muốn
-                appointment.setStartDate(date + "T00:00:00.000Z");
-                appointment.setEndDate(date + "T00:00:00.000Z");
-                appointment.setStatus(status);
-                appointment.setReq(req);
-                Log.d("API", "Appointment JSON: " + new com.google.gson.Gson().toJson(appointment));
-                if (appointmentToEdit != null) {
-                    appointment.setReq(appointmentToEdit.getReq()); // Giữ nguyên người đặt lịch khi update
-                    updateAppointment(appointment);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Log.d(TAG, "Schedule spinner item selected: position " + position);
+                if (position >= 0 && position < availableSchedules.size()) {
+                    selectedSchedule = availableSchedules.get(position);
+                    Log.d(TAG, "Selected schedule: " + selectedSchedule.getDayOfWeek());
+                    loadScheduleDetail(selectedSchedule.getScheduleId());
                 } else {
-                    createAppointment(appointment);
+                    selectedSchedule = null;
+                    selectedScheduleDetail = null;
+                    clearDateAndWorkingHours();
+                    enableHourInput(false);
                 }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedSchedule = null;
+                selectedScheduleDetail = null;
+                clearDateAndWorkingHours();
+                enableHourInput(false);
             }
         });
 
-        btnCancel.setOnClickListener(v -> dismiss());
+        spinnerFacility.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Log.d(TAG, "Facility spinner item selected: position " + position);
+                if (position >= 0 && position < availableFacilities.size()) {
+                    selectedFacility = availableFacilities.get(position);
+                    Log.d(TAG, "Selected facility: " + selectedFacility.getFacilityName());
+                } else {
+                    selectedFacility = null;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedFacility = null;
+            }
+        });
     }
 
-    private void createAppointment(Appointment appointment) {
-        ApiService apiService = RetrofitClient.getInstance();
-        apiService.createAppointment(appointment).enqueue(new Callback<Appointment>() {
+    private void setupForm() {
+        tvExpertId.setText(String.valueOf(doctorId));
+        Log.d(TAG, "Setting up form for expertId: " + doctorId);
+
+        if (appointmentToEdit != null) {
+            btnBook.setText("Cập nhật");
+            tvDialogTitle.setText("Sửa lịch hẹn");
+            edtPatientId.setText(String.valueOf(appointmentToEdit.getPatientId()));
+            edtNote.setText(appointmentToEdit.getNote() != null ? appointmentToEdit.getNote() : "");
+
+            if (appointmentToEdit.getStartDate() != null) {
+                String hour = extractHourFromDateTime(appointmentToEdit.getStartDate());
+                edtHour.setText(hour);
+            }
+        } else {
+            btnBook.setText("Đặt lịch");
+            tvDialogTitle.setText("Đặt lịch mới");
+            edtPatientId.setText("1");
+        }
+
+        enableHourInput(false);
+    }
+
+    private void setupHourValidation() {
+        edtHour.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onResponse(Call<Appointment> call, Response<Appointment> response) {
-                Log.d("API", "Response code: " + response.code());
-                if (response.isSuccessful()) {
-                    Log.d("API", "Response body: " + new com.google.gson.Gson().toJson(response.body()));
-                    if (response.body() != null) {
-                        callback.onBookingResult(true);
-                        dismiss();
-                    } else {
-                        Log.e("API", "Response body is null!");
-                        callback.onBookingResult(false);
-                    }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                validateHourInput();
+            }
+        });
+    }
+
+    private void validateHourInput() {
+        if (selectedScheduleDetail == null || edtHour.getText().toString().trim().isEmpty()) {
+            return;
+        }
+
+        String hourText = edtHour.getText().toString().trim();
+
+        try {
+            String[] parts = hourText.split(":");
+            int inputHour = Integer.parseInt(parts[0]);
+            int inputMinute = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+
+            if (inputHour < 0 || inputHour > 23) {
+                edtHour.setError("Giờ phải từ 00-23");
+                return;
+            }
+            if (inputMinute < 0 || inputMinute > 59) {
+                edtHour.setError("Phút phải từ 00-59");
+                return;
+            }
+
+            String startTime = extractHourFromDateTime(selectedScheduleDetail.getStartDate());
+            String endTime = extractHourFromDateTime(selectedScheduleDetail.getEndDate());
+
+            String[] startParts = startTime.split(":");
+            String[] endParts = endTime.split(":");
+
+            int startHour = Integer.parseInt(startParts[0]);
+            int startMinute = startParts.length > 1 ? Integer.parseInt(startParts[1]) : 0;
+            int endHour = Integer.parseInt(endParts[0]);
+            int endMinute = endParts.length > 1 ? Integer.parseInt(endParts[1]) : 0;
+
+            int inputTotalMinutes = inputHour * 60 + inputMinute;
+            int startTotalMinutes = startHour * 60 + startMinute;
+            int endTotalMinutes = endHour * 60 + endMinute;
+
+            if (inputTotalMinutes < startTotalMinutes || inputTotalMinutes >= endTotalMinutes) {
+                edtHour.setError("Giờ phải trong khoảng " + startTime + " - " + endTime);
+            } else {
+                edtHour.setError(null);
+            }
+
+        } catch (NumberFormatException e) {
+            edtHour.setError("Định dạng giờ không hợp lệ (VD: 08:30)");
+            Log.e(TAG, "Invalid hour format: " + hourText, e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error validating hour input", e);
+        }
+    }
+
+    private void enableHourInput(boolean enabled) {
+        edtHour.setEnabled(enabled);
+        if (!enabled) {
+            edtHour.setText("");
+            edtHour.setHint("Chọn lịch làm việc trước");
+            edtHour.setError(null);
+        } else {
+            edtHour.setHint("Nhập giờ (VD: 08:30)");
+        }
+        Log.d(TAG, "Hour input " + (enabled ? "enabled" : "disabled"));
+    }
+
+    private void updateDateAndWorkingHours() {
+        if (selectedSchedule == null || selectedScheduleDetail == null) return;
+
+        String nextDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
+        tvSelectedDate.setText("Ngày: " + nextDate);
+
+        String workingHours = extractWorkingHoursFromSchedule(selectedScheduleDetail);
+        tvWorkingHours.setText("Giờ làm việc: " + workingHours);
+
+        Log.d(TAG, "Updated date: " + nextDate + ", working hours: " + workingHours);
+    }
+
+    private void clearDateAndWorkingHours() {
+        tvSelectedDate.setText("Ngày: Chưa chọn");
+        tvWorkingHours.setText("Giờ làm việc: Chưa chọn");
+    }
+
+    private String getNextDateForDayOfWeek(String dayOfWeek) {
+        Calendar calendar = Calendar.getInstance();
+        int targetDayOfWeek = convertDayOfWeekToCalendar(dayOfWeek);
+        int currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+        int daysToAdd = (targetDayOfWeek - currentDayOfWeek + 7) % 7;
+        if (daysToAdd == 0) {
+            daysToAdd = 7;
+        }
+
+        calendar.add(Calendar.DAY_OF_MONTH, daysToAdd);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        return sdf.format(calendar.getTime());
+    }
+
+    private int convertDayOfWeekToCalendar(String dayOfWeek) {
+        switch (dayOfWeek.toLowerCase()) {
+            case "sunday": return Calendar.SUNDAY;
+            case "monday": return Calendar.MONDAY;
+            case "tuesday": return Calendar.TUESDAY;
+            case "wednesday": return Calendar.WEDNESDAY;
+            case "thursday": return Calendar.THURSDAY;
+            case "friday": return Calendar.FRIDAY;
+            case "saturday": return Calendar.SATURDAY;
+            default:
+                Log.w(TAG, "Unknown day of week: " + dayOfWeek + ", defaulting to Monday");
+                return Calendar.MONDAY;
+        }
+    }
+
+    private String extractHourFromDateTime(String dateTime) {
+        try {
+            if (dateTime != null && dateTime.contains("T")) {
+                String timePart = dateTime.substring(dateTime.indexOf('T') + 1);
+                return timePart.substring(0, 5);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error extracting hour from: " + dateTime, e);
+        }
+        return "";
+    }
+
+    private String extractWorkingHoursFromSchedule(Schedule schedule) {
+        try {
+            String startTime = extractHourFromDateTime(schedule.getStartDate());
+            String endTime = extractHourFromDateTime(schedule.getEndDate());
+            return startTime + " - " + endTime;
+        } catch (Exception e) {
+            Log.e(TAG, "Error extracting working hours from schedule", e);
+            return "Không xác định";
+        }
+    }
+
+    private void loadScheduleDetail(int scheduleId) {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading schedule detail for scheduleId: " + scheduleId);
+
+        apiService.getScheduleById(scheduleId).enqueue(new Callback<Schedule>() {
+            @Override
+            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
+                Log.d(TAG, "Schedule detail API response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null) {
+                    selectedScheduleDetail = response.body();
+                    Log.d(TAG, "Loaded schedule detail: " + selectedScheduleDetail.getStartDate() +
+                            " to " + selectedScheduleDetail.getEndDate());
+
+                    updateDateAndWorkingHours();
+                    enableHourInput(true);
                 } else {
-                    Log.e("API", "Create appointment failed: " + response.code());
-                    if (response.errorBody() != null) {
-                        try {
-                            Log.e("API", "Error body: " + response.errorBody().string());
-                        } catch (Exception e) {
-                            Log.e("API", "Error reading errorBody", e);
+                    Log.e(TAG, "Failed to load schedule detail. Response code: " + response.code());
+                    Toast.makeText(getContext(), "Lỗi tải thông tin lịch làm việc", Toast.LENGTH_SHORT).show();
+                    clearDateAndWorkingHours();
+                    enableHourInput(false);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Schedule> call, Throwable t) {
+                Log.e(TAG, "Error loading schedule detail", t);
+                Toast.makeText(getContext(), "Lỗi kết nối khi tải lịch làm việc", Toast.LENGTH_SHORT).show();
+                clearDateAndWorkingHours();
+                enableHourInput(false);
+            }
+        });
+    }
+
+    private void loadAvailableFacilities() {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading facilities for expertId: " + doctorId);
+
+        apiService.getFacilityByExpert(doctorId).enqueue(new Callback<Facility>() {
+            @Override
+            public void onResponse(Call<Facility> call, Response<Facility> response) {
+                Log.d(TAG, "Facility API response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null) {
+                    Facility facility = response.body();
+                    Log.d(TAG, "Processing facility: " + facility.getFacilityName() + ", active: " + facility.isActive());
+
+                    availableFacilities.clear();
+                    List<String> displayList = new ArrayList<>();
+
+                    if (facility.isActive()) {
+                        availableFacilities.add(facility);
+                        displayList.add(facility.getDisplayName());
+                        selectedFacility = facility;
+                        Log.d(TAG, "Added and auto-selected active facility: " + facility.getDisplayName());
+                    } else {
+                        Log.w(TAG, "Facility is not active: " + facility.getFacilityName());
+                        displayList.add("Cơ sở y tế không hoạt động");
+                    }
+
+                    if (displayList.isEmpty()) {
+                        displayList.add("Không có cơ sở y tế");
+                        Log.w(TAG, "No facilities found for expertId: " + doctorId);
+                    }
+
+                    facilityAdapter.clear();
+                    facilityAdapter.addAll(displayList);
+                    facilityAdapter.notifyDataSetChanged();
+
+                    if (!availableFacilities.isEmpty()) {
+                        spinnerFacility.setSelection(0);
+                        spinnerFacility.setEnabled(false);
+                        Log.d(TAG, "Auto-selected facility and disabled spinner");
+                    }
+
+                    if (appointmentToEdit != null && appointmentToEdit.getFacilityId() > 0) {
+                        setFacilitySelection(appointmentToEdit.getFacilityId());
+                    }
+
+                    Log.d(TAG, "Loaded facility successfully");
+                } else {
+                    Log.e(TAG, "Failed to load facility. Response code: " + response.code());
+                    updateFacilitySpinnerWithError();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Facility> call, Throwable t) {
+                Log.e(TAG, "Error loading facility", t);
+                updateFacilitySpinnerWithError();
+            }
+        });
+    }
+
+    private void updateFacilitySpinnerWithError() {
+        facilityAdapter.clear();
+        facilityAdapter.add("Lỗi tải cơ sở y tế");
+        facilityAdapter.notifyDataSetChanged();
+    }
+
+    private void setFacilitySelection(int facilityId) {
+        for (int i = 0; i < availableFacilities.size(); i++) {
+            if (availableFacilities.get(i).getFacilityId() == facilityId) {
+                spinnerFacility.setSelection(i);
+                selectedFacility = availableFacilities.get(i);
+                Log.d(TAG, "Set facility selection to: " + selectedFacility.getFacilityName());
+                break;
+            }
+        }
+    }
+
+    private void loadAvailableSchedules() {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading schedules for expertId: " + doctorId);
+
+        apiService.getExpertSchedules(doctorId).enqueue(new Callback<List<ExpertSchedule>>() {
+            @Override
+            public void onResponse(Call<List<ExpertSchedule>> call, Response<List<ExpertSchedule>> response) {
+                Log.d(TAG, "Schedules API response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null) {
+                    availableSchedules.clear();
+                    List<String> displayList = new ArrayList<>();
+
+                    for (ExpertSchedule schedule : response.body()) {
+                        Log.d(TAG, "Processing schedule: " + schedule.getDayOfWeek() + ", active: " + schedule.isActive());
+                        if (schedule.isActive()) {
+                            availableSchedules.add(schedule);
+                            String displayText = String.format("%s (%s)",
+                                    schedule.getDayOfWeekInVietnamese(),
+                                    schedule.getWorkingHours());
+                            displayList.add(displayText);
                         }
                     }
-                    callback.onBookingResult(false);
+
+                    if (displayList.isEmpty()) {
+                        displayList.add("Không có lịch làm việc");
+                        Log.w(TAG, "No active schedules found for expertId: " + doctorId);
+                    }
+
+                    scheduleAdapter.clear();
+                    scheduleAdapter.addAll(displayList);
+                    scheduleAdapter.notifyDataSetChanged();
+
+                    Log.d(TAG, "Loaded " + availableSchedules.size() + " active schedules");
+                } else {
+                    Log.e(TAG, "Failed to load schedules. Response code: " + response.code());
+                    updateSpinnerWithError();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ExpertSchedule>> call, Throwable t) {
+                Log.e(TAG, "Error loading schedules", t);
+                updateSpinnerWithError();
+            }
+        });
+    }
+
+    private void updateSpinnerWithError() {
+        scheduleAdapter.clear();
+        scheduleAdapter.add("Lỗi tải lịch làm việc");
+        scheduleAdapter.notifyDataSetChanged();
+    }
+
+    private void setupClickListeners() {
+        btnBook.setOnClickListener(v -> {
+            Log.d(TAG, "Book button clicked");
+            if (validateForm()) {
+                createOrUpdateAppointment();
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            Log.d(TAG, "Cancel button clicked");
+            dismiss();
+        });
+    }
+
+    private boolean validateForm() {
+        if (selectedSchedule == null) {
+            Toast.makeText(getContext(), "Vui lòng chọn lịch làm việc", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        if (selectedFacility == null) {
+            Toast.makeText(getContext(), "Vui lòng chọn cơ sở y tế", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        String patientIdText = edtPatientId.getText().toString().trim();
+        if (patientIdText.isEmpty()) {
+            Toast.makeText(getContext(), "Vui lòng nhập Patient ID", Toast.LENGTH_SHORT).show();
+            edtPatientId.requestFocus();
+            return false;
+        }
+
+        String hourText = edtHour.getText().toString().trim();
+        if (hourText.isEmpty()) {
+            Toast.makeText(getContext(), "Vui lòng nhập giờ hẹn", Toast.LENGTH_SHORT).show();
+            edtHour.requestFocus();
+            return false;
+        }
+
+        if (edtHour.getError() != null) {
+            Toast.makeText(getContext(), "Giờ hẹn không hợp lệ", Toast.LENGTH_SHORT).show();
+            edtHour.requestFocus();
+            return false;
+        }
+
+        try {
+            Integer.parseInt(patientIdText);
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Patient ID phải là số", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void createOrUpdateAppointment() {
+        try {
+            String appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
+            String appointmentHour = edtHour.getText().toString().trim();
+
+            if (!appointmentHour.contains(":")) {
+                appointmentHour += ":00";
+            }
+
+            String startDateTime = appointmentDate + "T" + appointmentHour + ":00.000Z";
+            String endDateTime = appointmentDate + "T" + appointmentHour + ":00.000Z";
+
+            if (appointmentToEdit != null) {
+                // For UPDATE: use Appointment object
+                Appointment appointment = new Appointment();
+                appointment.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
+                appointment.setExpertId(doctorId);
+                appointment.setFacilityId(selectedFacility.getFacilityId());
+                appointment.setNote(edtNote.getText().toString().trim());
+                appointment.setStartDate(startDateTime);
+                appointment.setEndDate(endDateTime);
+
+                Log.d(TAG, "Updating appointment with ID: " + appointmentToEdit.getAppointmentId());
+                updateAppointment(appointment);
+            } else {
+                // For CREATE: use AppointmentCreateRequest
+                AppointmentCreateRequest request = new AppointmentCreateRequest();
+                request.setScheduleId(selectedSchedule.getScheduleId());
+                request.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
+                request.setExpertId(doctorId);
+                request.setFacilityId(selectedFacility.getFacilityId());
+                request.setNote(edtNote.getText().toString().trim());
+                request.setStartDate(startDateTime);
+                request.setEndDate(endDateTime);
+
+                Log.d(TAG, "Creating appointment:");
+                Log.d(TAG, "- Date: " + appointmentDate);
+                Log.d(TAG, "- Hour: " + appointmentHour);
+                Log.d(TAG, "- DateTime: " + startDateTime);
+                Log.d(TAG, "- ScheduleId: " + request.getScheduleId());
+                Log.d(TAG, "- PatientId: " + request.getPatientId());
+                Log.d(TAG, "- ExpertId: " + request.getExpertId());
+                Log.d(TAG, "- FacilityId: " + request.getFacilityId());
+
+                createAppointment(request);
+            }
+
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Vui lòng nhập số hợp lệ", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Number format error", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating appointment", e);
+            Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void createAppointment(AppointmentCreateRequest request) {
+        Log.d(TAG, "Calling create appointment API");
+        Log.d(TAG, "Request: " + request.toString());
+
+        ApiService apiService = RetrofitClient.getInstance();
+        apiService.createAppointment(request).enqueue(new Callback<Appointment>() {
+            @Override
+            public void onResponse(Call<Appointment> call, Response<Appointment> response) {
+                Log.d(TAG, "Create appointment response code: " + response.code());
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Appointment created successfully");
+                    Toast.makeText(getContext(), "Đặt lịch thành công!", Toast.LENGTH_SHORT).show();
+                    callback.onBookingResult(true);
+                    dismiss();
+                } else {
+                    Log.e(TAG, "Create appointment failed: " + response.code());
+                    handleApiError(response);
                 }
             }
 
             @Override
             public void onFailure(Call<Appointment> call, Throwable t) {
-                Log.e("API", "Create appointment error: " + t.getMessage());
+                Log.e(TAG, "Create appointment network error", t);
                 callback.onBookingResult(false);
+                Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void updateAppointment(Appointment appointment) {
+        Log.d(TAG, "Calling update appointment API for ID: " + appointmentToEdit.getAppointmentId());
         ApiService apiService = RetrofitClient.getInstance();
         apiService.updateAppointment(appointmentToEdit.getAppointmentId(), appointment)
                 .enqueue(new Callback<Appointment>() {
                     @Override
                     public void onResponse(Call<Appointment> call, Response<Appointment> response) {
-                        Log.d("API", "Response code: " + response.code());
+                        Log.d(TAG, "Update appointment response code: " + response.code());
                         if (response.isSuccessful()) {
-                            Log.d("API", "Response body: " + new com.google.gson.Gson().toJson(response.body()));
-                            if (response.body() != null) {
-                                callback.onBookingResult(true);
-                                dismiss();
-                            } else {
-                                Log.e("API", "Response body is null!");
-                                callback.onBookingResult(false);
-                            }
+                            Log.d(TAG, "Appointment updated successfully");
+                            Toast.makeText(getContext(), "Cập nhật lịch thành công!", Toast.LENGTH_SHORT).show();
+                            callback.onBookingResult(true);
+                            dismiss();
                         } else {
-                            Log.e("API", "Update appointment failed: " + response.code());
-                            if (response.errorBody() != null) {
-                                try {
-                                    Log.e("API", "Error body: " + response.errorBody().string());
-                                } catch (Exception e) {
-                                    Log.e("API", "Error reading errorBody", e);
-                                }
-                            }
-                            callback.onBookingResult(false);
+                            Log.e(TAG, "Update appointment failed: " + response.code());
+                            handleApiError(response);
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Appointment> call, Throwable t) {
-                        Log.e("API", "Update appointment error: " + t.getMessage());
+                        Log.e(TAG, "Update appointment network error", t);
                         callback.onBookingResult(false);
+                        Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void handleApiError(Response<Appointment> response) {
+        try {
+            if (response.errorBody() != null) {
+                String errorBody = response.errorBody().string();
+                Log.e(TAG, "API Error body: " + errorBody);
+                Toast.makeText(getContext(), "Lỗi API: " + response.code(), Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getContext(), "Lỗi: " + response.code(), Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading errorBody", e);
+            Toast.makeText(getContext(), "Lỗi không xác định", Toast.LENGTH_SHORT).show();
+        }
+        callback.onBookingResult(false);
     }
 }

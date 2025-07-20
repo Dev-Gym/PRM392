@@ -18,5 +18,6 @@ namespace MedicaiFacility.DataAccess.IRepostory
         (List<MedicalFacility>, Dictionary<int, List<string>>, int totalItem) FindAllWithDepartmentsAndPagination(int pg, int pageSize);
         void UpdateMedicalFacilityWithDepartments(MedicalFacility medicalFacility, List<int> selectedDepartmentIds);
         List<int?> GetDepartmentIdsByFacilityId(int facilityId);
+        MedicalFacility FindByExperId(int experId);
     }
 }
