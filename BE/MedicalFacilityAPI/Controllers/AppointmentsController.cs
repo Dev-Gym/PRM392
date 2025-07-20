@@ -110,12 +110,11 @@ namespace MedicalFacilityAPI.Controllers
             var existingMedicalHistory = _medicalHistoryService.ExistingMedicalHistory(existingAppointment.AppointmentId);
             if (existingMedicalHistory != null)
             {            
-                 if (existingMedicalHistory.Status == "Processing"|| existingMedicalHistory.Status == "Completed") return BadRequest("Đang diễn ra quá trình khám hoặc quá trình khám đã xong nên không thể hủy được");
+                 if (existingMedicalHistory.Status == "Processing"||existingMedicalHistory.Status == "Completed") return BadRequest("Đang diễn ra quá trình khám hoặc quá trình khám đã xong nên không thể hủy được");
                 if (existingMedicalHistory.Status == "Pending") {
                     existingMedicalHistory.Status = "Cancelled";
                     _medicalHistoryService.Update(existingMedicalHistory);
                 }
-
             }
             existingAppointment.Status = "Cancelled";
             existingAppointment.UpdatedAt = DateTime.Now;

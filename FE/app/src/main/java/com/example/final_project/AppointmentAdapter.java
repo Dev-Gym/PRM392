@@ -92,6 +92,13 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             holder.btnEdit.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.GONE);
 
+        }else if ("Completed".equalsIgnoreCase(status)) {
+            // Deleted/IsDelete: Hide all buttons
+            holder.btnConfirm.setVisibility(View.GONE);
+            holder.btnCancel.setVisibility(View.GONE);
+            holder.btnEdit.setVisibility(View.GONE);
+            holder.btnDelete.setVisibility(View.GONE);
+
         } else {
             // Default/Unknown status: Only show Delete
             holder.btnConfirm.setVisibility(View.GONE);
