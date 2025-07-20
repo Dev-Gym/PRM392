@@ -23,7 +23,16 @@ public interface ApiService {
     // Medical History
     @GET("api/MedicalHistory")
     Call<List<MedicalHistory>> getMedicalHistory();
+    @PUT("api/MedicalHistory/delete/{MedicalHistoryId}")
+    Call<MedicalHistory> deleteMedicalHistory(@Path("MedicalHistoryId") int historyId);
 
+    @PUT("api/MedicalHistory/processing/{MedicalHistoryId}")
+    Call<MedicalHistory> processingMedicalHistory(@Path("MedicalHistoryId") int historyId);
+
+    @PUT("api/MedicalHistory/cancelled/{MedicalHistoryId}")
+    Call<MedicalHistory> cancelMedicalHistory(@Path("MedicalHistoryId") int historyId);
+    @PUT("api/MedicalHistory/completed/{MedicalHistoryId}")
+    Call<MedicalHistory> completedMedicalHistory(@Path("MedicalHistoryId") int historyId);
     // Appointments
     @GET("api/Appointments")
     Call<List<Appointment>> getAppointments();

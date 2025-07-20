@@ -52,7 +52,28 @@ public class MedicalHistoryActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        medicalHistoryAdapter = new MedicalHistoryAdapter(medicalHistoryList);
+        medicalHistoryAdapter = new MedicalHistoryAdapter(medicalHistoryList,
+                new MedicalHistoryAdapter.OnMedicalHistoryActionListener() {
+                    @Override
+                    public void onDelete(MedicalHistory history) {
+                        showDeleteConfirm(history);
+                    }
+
+                    @Override
+                    public void onProcessing(MedicalHistory history) {
+                        showProcessingConfirm(history);
+                    }
+
+                    @Override
+                    public void onCancel(MedicalHistory history) {
+                        showCancelConfirm(history);
+                    }
+
+                    @Override
+                    public void onCompleted(MedicalHistory history) {
+                        showCompletedConfirm(history);
+                    }
+                });
         rvMedicalHistory.setLayoutManager(new LinearLayoutManager(this));
         rvMedicalHistory.setAdapter(medicalHistoryAdapter);
     }
@@ -79,8 +100,8 @@ public class MedicalHistoryActivity extends AppCompatActivity {
 
         if (userId > 0) {
             Log.d(TAG, "Loading medical history for userId: " + userId);
-            // Use existing method with userId parameter
-            call = apiService.getMedicalHistory(); // This calls without userId parameter
+            // Use method with userId parameter
+            call = apiService.getMedicalHistoryByUserId(userId);
         } else {
             Log.d(TAG, "Loading all medical history");
             // Use existing method - getMedicalHistory() returns all records
@@ -93,22 +114,8 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                 Log.d(TAG, "API response code: " + response.code());
 
                 if (response.isSuccessful() && response.body() != null) {
-                    List<MedicalHistory> allRecords = response.body();
-
-                    // Filter by userId if specified
                     medicalHistoryList.clear();
-                    if (userId > 0) {
-                        // Client-side filtering by userId (since API doesn't support it)
-                        for (MedicalHistory record : allRecords) {
-                            // Note: MedicalHistory doesn't have userId field directly
-                            // We'll show all records for now, or you can add filtering logic
-                            medicalHistoryList.add(record);
-                        }
-                    } else {
-                        // Show all records
-                        medicalHistoryList.addAll(allRecords);
-                    }
-
+                    medicalHistoryList.addAll(response.body());
                     medicalHistoryAdapter.notifyDataSetChanged();
 
                     Log.d(TAG, "Loaded " + medicalHistoryList.size() + " medical history records");
@@ -124,6 +131,160 @@ public class MedicalHistoryActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<List<MedicalHistory>> call, Throwable t) {
                 Log.e(TAG, "Get medical history error: " + t.getMessage());
+                Toast.makeText(MedicalHistoryActivity.this,
+                        "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // DIALOG CONFIRMATION METHODS
+    private void showDeleteConfirm(MedicalHistory history) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Xác nhận xóa")
+                .setMessage("Bạn có chắc muốn xóa bản ghi này?")
+                .setPositiveButton("Xóa", (dialog, which) -> deleteMedicalHistory(history))
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void showProcessingConfirm(MedicalHistory history) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Xác nhận xử lý")
+                .setMessage("Bạn có chắc muốn xử lý bản ghi này?")
+                .setPositiveButton("Xử lý", (dialog, which) -> processingMedicalHistory(history))
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void showCancelConfirm(MedicalHistory history) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Xác nhận hủy")
+                .setMessage("Bạn có chắc muốn hủy bản ghi này?")
+                .setPositiveButton("Hủy bản ghi", (dialog, which) -> cancelMedicalHistory(history))
+                .setNegativeButton("Không", null)
+                .show();
+    }
+
+    private void showCompletedConfirm(MedicalHistory history) {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Xác nhận hoàn thành")
+                .setMessage("Bạn có chắc muốn đánh dấu bản ghi này là hoàn thành?")
+                .setPositiveButton("Hoàn thành", (dialog, which) -> completedMedicalHistory(history))
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    // API CALL METHODS - FULLY IMPLEMENTED
+    private void deleteMedicalHistory(MedicalHistory history) {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Deleting medical history ID: " + history.getHistoryId());
+
+        apiService.deleteMedicalHistory(history.getHistoryId()).enqueue(new Callback<MedicalHistory>() {
+            @Override
+            public void onResponse(Call<MedicalHistory> call, Response<MedicalHistory> response) {
+                Log.d(TAG, "Delete response code: " + response.code());
+
+                if (response.isSuccessful()) {
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Xóa bản ghi thành công!", Toast.LENGTH_SHORT).show();
+                    getMedicalHistory(-1); // Refresh list
+                } else {
+                    Log.e(TAG, "Delete failed: " + response.code());
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Lỗi xóa bản ghi: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MedicalHistory> call, Throwable t) {
+                Log.e(TAG, "Delete error: " + t.getMessage());
+                Toast.makeText(MedicalHistoryActivity.this,
+                        "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void processingMedicalHistory(MedicalHistory history) {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Processing medical history ID: " + history.getHistoryId());
+
+        apiService.processingMedicalHistory(history.getHistoryId()).enqueue(new Callback<MedicalHistory>() {
+            @Override
+            public void onResponse(Call<MedicalHistory> call, Response<MedicalHistory> response) {
+                Log.d(TAG, "Processing response code: " + response.code());
+
+                if (response.isSuccessful()) {
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Xử lý bản ghi thành công!", Toast.LENGTH_SHORT).show();
+                    getMedicalHistory(-1); // Refresh list
+                } else {
+                    Log.e(TAG, "Processing failed: " + response.code());
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Lỗi xử lý bản ghi: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MedicalHistory> call, Throwable t) {
+                Log.e(TAG, "Processing error: " + t.getMessage());
+                Toast.makeText(MedicalHistoryActivity.this,
+                        "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void cancelMedicalHistory(MedicalHistory history) {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Cancelling medical history ID: " + history.getHistoryId());
+
+        apiService.cancelMedicalHistory(history.getHistoryId()).enqueue(new Callback<MedicalHistory>() {
+            @Override
+            public void onResponse(Call<MedicalHistory> call, Response<MedicalHistory> response) {
+                Log.d(TAG, "Cancel response code: " + response.code());
+
+                if (response.isSuccessful()) {
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Hủy bản ghi thành công!", Toast.LENGTH_SHORT).show();
+                    getMedicalHistory(-1); // Refresh list
+                } else {
+                    Log.e(TAG, "Cancel failed: " + response.code());
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Lỗi hủy bản ghi: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MedicalHistory> call, Throwable t) {
+                Log.e(TAG, "Cancel error: " + t.getMessage());
+                Toast.makeText(MedicalHistoryActivity.this,
+                        "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void completedMedicalHistory(MedicalHistory history) {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Completing medical history ID: " + history.getHistoryId());
+
+        apiService.completedMedicalHistory(history.getHistoryId()).enqueue(new Callback<MedicalHistory>() {
+            @Override
+            public void onResponse(Call<MedicalHistory> call, Response<MedicalHistory> response) {
+                Log.d(TAG, "Completed response code: " + response.code());
+
+                if (response.isSuccessful()) {
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Đánh dấu hoàn thành thành công!", Toast.LENGTH_SHORT).show();
+                    getMedicalHistory(-1); // Refresh list
+                } else {
+                    Log.e(TAG, "Completed failed: " + response.code());
+                    Toast.makeText(MedicalHistoryActivity.this,
+                            "Lỗi đánh dấu hoàn thành: " + response.code(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MedicalHistory> call, Throwable t) {
+                Log.e(TAG, "Completed error: " + t.getMessage());
                 Toast.makeText(MedicalHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }

@@ -10,9 +10,11 @@ namespace MedicalFacilityAPI.Controllers
     public class MedicalHistoryController : ControllerBase
     {
         private readonly IMedicalHistoryService _medicalHistoryService;
-        public MedicalHistoryController(IMedicalHistoryService medicalHistoryService)
+        private readonly IAppointmentService _appointmentService;   
+        public MedicalHistoryController(IMedicalHistoryService medicalHistoryService, IAppointmentService appointmentService)
         {
             _medicalHistoryService = medicalHistoryService;
+            _appointmentService = appointmentService;
         }
 
         // Lấy lịch sử khám bệnh của user
@@ -75,6 +77,47 @@ namespace MedicalFacilityAPI.Controllers
             var item = _medicalHistoryService.GetById(MedicalHistoryId);
             item.Status = "IsDeleted";
             var result = _medicalHistoryService.Update(item);
+            return Ok(item);
+        }
+
+        [HttpPut("processing/{MedicalHistoryId:int}")]
+        public ActionResult<MedicalHistory> Processing(int MedicalHistoryId)
+        {
+            var item = _medicalHistoryService.GetById(MedicalHistoryId);
+            item.Status = "Processing";
+            var result = _medicalHistoryService.Update(item);
+            return Ok(item);
+        }
+
+        [HttpPut("cancelled/{MedicalHistoryId:int}")]
+        public ActionResult<MedicalHistory> Cancelled(int MedicalHistoryId)
+        {
+           
+            var item = _medicalHistoryService.GetById(MedicalHistoryId);
+            item.Status = "Cancelled";
+           
+            var result = _medicalHistoryService.Update(item);
+            var appointment = _appointmentService.GetById((int)item.AppointmentId);
+            if (appointment!=null&& appointment.Status== "Confirmed") {
+                appointment.Status = "Cancelled";
+                _appointmentService.Update(appointment);
+            }
+            return Ok(item);
+        }
+        [HttpPut("completed/{MedicalHistoryId:int}")]
+        public ActionResult<MedicalHistory> Completed(int MedicalHistoryId)
+        {
+
+            var item = _medicalHistoryService.GetById(MedicalHistoryId);
+            item.Status = "Completed";
+            item.Payed = true;
+            var result = _medicalHistoryService.Update(item);
+            var appointment = _appointmentService.GetById((int)item.AppointmentId);
+            if (appointment != null && appointment.Status == "Confirmed")
+            {
+                appointment.Status = "Completed";
+                _appointmentService.Update(appointment);
+            }
             return Ok(item);
         }
     }
