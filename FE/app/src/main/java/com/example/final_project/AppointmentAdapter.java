@@ -16,8 +16,8 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     public interface OnAppointmentActionListener {
         void onEdit(Appointment appointment);
         void onDelete(Appointment appointment);
-        void onConfirm(Appointment appointment);  // ADD THIS
-        void onCancel(Appointment appointment);   // ADD THIS
+        void onConfirm(Appointment appointment);
+        void onCancel(Appointment appointment);
     }
 
     private OnAppointmentActionListener actionListener;
@@ -43,8 +43,13 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     @Override
     public void onBindViewHolder(@NonNull AppointmentViewHolder holder, int position) {
         Appointment appointment = appointmentList.get(position);
+
+        // Bind all data to views
+        holder.tvAppointmentId.setText("ID: " + appointment.getAppointmentId());
+        holder.tvPatientId.setText("Patient ID: " + appointment.getPatientId());
+        holder.tvExpertId.setText("Expert ID: " + appointment.getExpertId());
         holder.tvDate.setText(appointment.getStartDate());
-        holder.tvStatus.setText(appointment.getStatus());
+        holder.tvStatus.setText("Status: " + appointment.getStatus());
 
         // Set click listeners for all buttons
         holder.btnEdit.setOnClickListener(v -> actionListener.onEdit(appointment));
@@ -60,24 +65,24 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         String status = appointment.getStatus();
 
         if ("Pending".equalsIgnoreCase(status)) {
-            // Pending: Show Confirm, Cancel, Edit, Delete
+            // Pending: Show Confirm, Cancel, Edit
             holder.btnConfirm.setVisibility(View.VISIBLE);
             holder.btnCancel.setVisibility(View.VISIBLE);
             holder.btnEdit.setVisibility(View.VISIBLE);
-            holder.btnDelete.setVisibility(View.VISIBLE);
+            holder.btnDelete.setVisibility(View.GONE);
 
         } else if ("Confirmed".equalsIgnoreCase(status)) {
-            // Confirmed: Only show Cancel, Edit, Delete (Hide Confirm)
+            // Confirmed: Only show Cancel
             holder.btnConfirm.setVisibility(View.GONE);
             holder.btnCancel.setVisibility(View.VISIBLE);
             holder.btnEdit.setVisibility(View.GONE);
-            holder.btnDelete.setVisibility(View.VISIBLE);
+            holder.btnDelete.setVisibility(View.GONE);
 
         } else if ("Cancelled".equalsIgnoreCase(status)) {
-            // Cancelled: Only show Edit and Delete (Hide Confirm and Cancel)
+            // Cancelled: Only show Delete
             holder.btnConfirm.setVisibility(View.GONE);
             holder.btnCancel.setVisibility(View.GONE);
-            holder.btnEdit.setVisibility(View.VISIBLE);
+            holder.btnEdit.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.VISIBLE);
 
         } else if ("Deleted".equalsIgnoreCase(status) || "IsDelete".equalsIgnoreCase(status)) {
@@ -88,10 +93,10 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             holder.btnDelete.setVisibility(View.GONE);
 
         } else {
-            // Default/Unknown status: Show all buttons
-            holder.btnConfirm.setVisibility(View.VISIBLE);
-            holder.btnCancel.setVisibility(View.VISIBLE);
-            holder.btnEdit.setVisibility(View.VISIBLE);
+            // Default/Unknown status: Only show Delete
+            holder.btnConfirm.setVisibility(View.GONE);
+            holder.btnCancel.setVisibility(View.GONE);
+            holder.btnEdit.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.VISIBLE);
         }
     }
@@ -102,11 +107,14 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     }
 
     static class AppointmentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvDate, tvStatus;
-        Button btnEdit, btnDelete, btnConfirm, btnCancel; // UPDATED TO BUTTON TYPE
+        TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus;
+        Button btnEdit, btnDelete, btnConfirm, btnCancel;
 
         AppointmentViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvAppointmentId = itemView.findViewById(R.id.tvAppointmentId);
+            tvPatientId = itemView.findViewById(R.id.tvPatientId);
+            tvExpertId = itemView.findViewById(R.id.tvExpertId);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             btnEdit = itemView.findViewById(R.id.btnEdit);

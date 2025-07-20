@@ -54,8 +54,21 @@ namespace MedicalFacilityAPI.Controllers
         [HttpPut("{appointmentId:int}")]
         public ActionResult<Appointment> Update(int appointmentId, [FromBody] RequestUpdateAppointment req) {
             var existingAppointment = _appointmentService.GetById(appointmentId);
-            
-            
+            if (existingAppointment == null) return NotFound();
+            req.EndDate = req.StartDate.AddMinutes(30);
+            var schedule = _medicalExpertScheduleService.GetSchedulesByExpertId(req.ExpertId).FirstOrDefault(x => x.ScheduleId == req.ScheduleId);
+            if (schedule != null)
+            {
+                var date = schedule.StartDate.Date;
+                req.StartDate = date + (req.StartDate).TimeOfDay;
+                req.EndDate = date + (req.EndDate).TimeOfDay;
+            }
+            var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.ScheduleId, req.StartDate, req.EndDate);
+            if (!checkValidSchedule.Equals("true"))
+            {
+                return null;
+            }
+
             if (existingAppointment.Status == "Pending") {
                 existingAppointment.StartDate = req.StartDate;
                 existingAppointment.EndDate = req.EndDate;
@@ -70,19 +83,40 @@ namespace MedicalFacilityAPI.Controllers
         public ActionResult<Appointment> UpdateConfirm(int appointmentId)
         {
             var existingAppointment = _appointmentService.GetById(appointmentId);
-            if(existingAppointment == null) return NotFound();  
-            var existingMedicalHistory = 
+            if(existingAppointment == null) return NotFound();
+           
+           
             existingAppointment.Status = "Confirmed";
             existingAppointment.UpdatedAt = DateTime.Now;
 
             var result = _appointmentService.Update(existingAppointment);
+       
+            var newHistory = new MedicalHistory
+            {
+                AppointmentId = appointmentId,
+                Description = "đã xác nhận khám rồi",
+                Status = "Pending",
+                Payed = true,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+           _medicalHistoryService.Create(newHistory);
             return Ok(result);
         }
         [HttpPut("cancelled/{appointmentId:int}")]
         public ActionResult<Appointment> UpdateCancelled(int appointmentId)
         {
             var existingAppointment = _appointmentService.GetById(appointmentId);
+            var existingMedicalHistory = _medicalHistoryService.ExistingMedicalHistory(existingAppointment.AppointmentId);
+            if (existingMedicalHistory != null)
+            {            
+                 if (existingMedicalHistory.Status == "Processing"|| existingMedicalHistory.Status == "Completed") return BadRequest("Đang diễn ra quá trình khám hoặc quá trình khám đã xong nên không thể hủy được");
+                if (existingMedicalHistory.Status == "Pending") {
+                    existingMedicalHistory.Status = "Cancelled";
+                    _medicalHistoryService.Update(existingMedicalHistory);
+                }
 
+            }
             existingAppointment.Status = "Cancelled";
             existingAppointment.UpdatedAt = DateTime.Now;
 
