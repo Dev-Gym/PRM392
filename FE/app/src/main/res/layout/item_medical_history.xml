@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- History ID and Appointment ID -->
+        <TextView
+            android:id="@+id/tvHistoryId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="History ID: 1"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:textStyle="italic"/>
+
+        <TextView
+            android:id="@+id/tvAppointmentId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Appointment ID: 1"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:textStyle="italic"
+            android:layout_marginTop="2dp"/>
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mô tả: Asthma check"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Trạng thái: Completed"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="6dp"/>
+
+        <!-- Payment Status -->
+        <TextView
+            android:id="@+id/tvPayed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Thanh toán: Đã thanh toán"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Created Date -->
+        <TextView
+            android:id="@+id/tvCreatedAt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tạo lúc: 2025-07-15 17:39:15"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginTop="6dp"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

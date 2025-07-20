@@ -18,7 +18,8 @@ public interface ApiService {
     // Authentication
     @POST("api/Auth/login")
     Call<AuthResponse> login(@Body AuthRequest request);
-
+    @GET("api/MedicalHistory")
+    Call<List<MedicalHistory>> getMedicalHistoryByUserId(@Query("userId") int userId);
     // Medical History
     @GET("api/MedicalHistory")
     Call<List<MedicalHistory>> getMedicalHistory();

@@ -30,7 +30,7 @@
         <activity android:name=".DoctorDetailActivity" />
         <activity android:name=".AppointmentHistoryActivity" />
         <activity android:name=".ExpertScheduleActivity" />
-        <!-- BookingDialog là dialog, không cần khai báo -->
+        <activity android:name=".MedicalHistoryActivity" />
     </application>
 
 </manifest>

@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnDoctors = findViewById(R.id.btnDoctors);
         Button btnHistory = findViewById(R.id.btnHistory);
+        Button btnSchedule = findViewById(R.id.btnSchedule); // ADD THIS LINE
 
         btnDoctors.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MedicalExpertActivity.class);
@@ -37,6 +38,12 @@ public class MainActivity extends AppCompatActivity {
         btnHistory.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AppointmentHistoryActivity.class);
             intent.putExtra("token", "Bearer test-token");
+            startActivity(intent);
+        });
+
+        // ADD CLICK LISTENER FOR MEDICAL HISTORY
+        btnSchedule.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, MedicalHistoryActivity.class);
             startActivity(intent);
         });
 
@@ -54,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         Log.d(TAG, "Medical history loaded successfully: " + response.body().size() + " records");
                         Toast.makeText(MainActivity.this,
-                                "Medical history loaded: " + response.body().size() + " records", Toast.LENGTH_SHORT)
+                                        "Medical history loaded: " + response.body().size() + " records", Toast.LENGTH_SHORT)
                                 .show();
                     } else {
                         Log.e(TAG, "Medical history failed: " + response.code());
@@ -82,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         Log.d(TAG, "Appointments loaded successfully: " + response.body().size() + " appointments");
                         Toast.makeText(MainActivity.this,
-                                "Appointments loaded: " + response.body().size() + " appointments", Toast.LENGTH_SHORT)
+                                        "Appointments loaded: " + response.body().size() + " appointments", Toast.LENGTH_SHORT)
                                 .show();
                     } else {
                         Log.e(TAG, "Appointments failed: " + response.code());
