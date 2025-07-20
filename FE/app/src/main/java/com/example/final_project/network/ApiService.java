@@ -27,6 +27,10 @@ public interface ApiService {
     @GET("api/Appointments")
     Call<List<Appointment>> getAppointments();
 
+    // GET single appointment by ID - THÊM METHOD NÀY
+    @GET("api/Appointments/{id}")
+    Call<Appointment> getAppointment(@Path("id") int appointmentId);
+
     // CREATE appointment with AppointmentCreateRequest
     @POST("api/Appointments")
     Call<Appointment> createAppointment(@Body AppointmentCreateRequest request);

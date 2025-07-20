@@ -93,11 +93,30 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
     }
 
     private void showEditDialog(Appointment appointment) {
-        BookingDialog dialog = new BookingDialog(this, appointment.getExpertId(), null, success -> {
-            if (success)
-                getAppointments(-1);
-        }, appointment); // <-- phải truyền appointment vào đây!
-        dialog.show();
+        // Load full appointment data trước khi show dialog
+        ApiService apiService = RetrofitClient.getInstance();
+        apiService.getAppointment(appointment.getAppointmentId()).enqueue(new Callback<Appointment>() {
+            @Override
+            public void onResponse(Call<Appointment> call, Response<Appointment> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Appointment fullAppointment = response.body();
+
+                    BookingDialog dialog = new BookingDialog(AppointmentHistoryActivity.this,
+                            fullAppointment.getExpertId(), null, success -> {
+                        if (success)
+                            getAppointments(-1);
+                    }, fullAppointment);
+                    dialog.show();
+                } else {
+                    Log.e("API", "Get appointment failed: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Appointment> call, Throwable t) {
+                Log.e("API", "Get appointment error: " + t.getMessage());
+            }
+        });
     }
 
     private void showDeleteConfirm(Appointment appointment) {

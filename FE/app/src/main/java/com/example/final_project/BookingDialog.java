@@ -91,6 +91,11 @@ public class BookingDialog extends Dialog {
         loadAvailableSchedules();
         setupClickListeners();
         setupHourValidation();
+
+        // Populate appointment data if editing
+        if (appointmentToEdit != null) {
+            populateAppointmentData(appointmentToEdit);
+        }
     }
 
     private void initViews() {
@@ -107,6 +112,47 @@ public class BookingDialog extends Dialog {
         btnCancel = findViewById(R.id.btnCancel);
 
         Log.d(TAG, "All views initialized successfully");
+    }
+
+    // ADD METHOD TO POPULATE APPOINTMENT DATA WHEN EDITING
+    private void populateAppointmentData(Appointment appointment) {
+        if (appointment != null) {
+            Log.d(TAG, "Populating appointment data for edit mode");
+
+            // Set patient ID và note
+            edtPatientId.setText(String.valueOf(appointment.getPatientId()));
+            edtNote.setText(appointment.getNote() != null ? appointment.getNote() : "");
+
+            // Parse startDate để lấy chỉ hour
+            String startDate = appointment.getStartDate(); // "2025-04-01T09:00:00"
+            Log.d(TAG, "Parsing startDate: " + startDate);
+
+            if (startDate != null && !startDate.isEmpty()) {
+                try {
+                    // Parse ISO datetime
+                    String[] dateTimeParts = startDate.split("T");
+                    if (dateTimeParts.length > 1) {
+                        String timePart = dateTimeParts[1]; // "09:00:00"
+                        String[] timeParts = timePart.split(":");
+
+                        if (timeParts.length >= 2) {
+                            String hourMinute = timeParts[0] + ":" + timeParts[1]; // "09:00"
+                            edtHour.setText(hourMinute);
+                            edtHour.setEnabled(true);
+                            Log.d(TAG, "Set hour to: " + hourMinute);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing startDate: " + e.getMessage());
+                }
+            }
+
+            // Update dialog title và button text for edit mode
+            tvDialogTitle.setText("Sửa lịch hẹn");
+            btnBook.setText("Cập nhật");
+
+            Log.d(TAG, "Appointment data populated successfully");
+        }
     }
 
     private void setupSpinners() {
@@ -141,7 +187,10 @@ public class BookingDialog extends Dialog {
                     selectedSchedule = null;
                     selectedScheduleDetail = null;
                     clearDateAndWorkingHours();
-                    enableHourInput(false);
+                    // Don't disable hour input in edit mode if hour is already set
+                    if (appointmentToEdit == null || edtHour.getText().toString().trim().isEmpty()) {
+                        enableHourInput(false);
+                    }
                 }
             }
 
@@ -150,7 +199,9 @@ public class BookingDialog extends Dialog {
                 selectedSchedule = null;
                 selectedScheduleDetail = null;
                 clearDateAndWorkingHours();
-                enableHourInput(false);
+                if (appointmentToEdit == null || edtHour.getText().toString().trim().isEmpty()) {
+                    enableHourInput(false);
+                }
             }
         });
 
@@ -183,17 +234,14 @@ public class BookingDialog extends Dialog {
             edtPatientId.setText(String.valueOf(appointmentToEdit.getPatientId()));
             edtNote.setText(appointmentToEdit.getNote() != null ? appointmentToEdit.getNote() : "");
 
-            if (appointmentToEdit.getStartDate() != null) {
-                String hour = extractHourFromDateTime(appointmentToEdit.getStartDate());
-                edtHour.setText(hour);
-            }
+            // Enable hour input for edit mode
+            enableHourInput(true);
         } else {
             btnBook.setText("Đặt lịch");
             tvDialogTitle.setText("Đặt lịch mới");
             edtPatientId.setText("1");
+            enableHourInput(false);
         }
-
-        enableHourInput(false);
     }
 
     private void setupHourValidation() {
@@ -212,7 +260,7 @@ public class BookingDialog extends Dialog {
     }
 
     private void validateHourInput() {
-        if (selectedScheduleDetail == null || edtHour.getText().toString().trim().isEmpty()) {
+        if (edtHour.getText().toString().trim().isEmpty()) {
             return;
         }
 
@@ -232,24 +280,30 @@ public class BookingDialog extends Dialog {
                 return;
             }
 
-            String startTime = extractHourFromDateTime(selectedScheduleDetail.getStartDate());
-            String endTime = extractHourFromDateTime(selectedScheduleDetail.getEndDate());
+            // Only validate working hours if schedule is selected
+            if (selectedScheduleDetail != null) {
+                String startTime = extractHourFromDateTime(selectedScheduleDetail.getStartDate());
+                String endTime = extractHourFromDateTime(selectedScheduleDetail.getEndDate());
 
-            String[] startParts = startTime.split(":");
-            String[] endParts = endTime.split(":");
+                String[] startParts = startTime.split(":");
+                String[] endParts = endTime.split(":");
 
-            int startHour = Integer.parseInt(startParts[0]);
-            int startMinute = startParts.length > 1 ? Integer.parseInt(startParts[1]) : 0;
-            int endHour = Integer.parseInt(endParts[0]);
-            int endMinute = endParts.length > 1 ? Integer.parseInt(endParts[1]) : 0;
+                int startHour = Integer.parseInt(startParts[0]);
+                int startMinute = startParts.length > 1 ? Integer.parseInt(startParts[1]) : 0;
+                int endHour = Integer.parseInt(endParts[0]);
+                int endMinute = endParts.length > 1 ? Integer.parseInt(endParts[1]) : 0;
 
-            int inputTotalMinutes = inputHour * 60 + inputMinute;
-            int startTotalMinutes = startHour * 60 + startMinute;
-            int endTotalMinutes = endHour * 60 + endMinute;
+                int inputTotalMinutes = inputHour * 60 + inputMinute;
+                int startTotalMinutes = startHour * 60 + startMinute;
+                int endTotalMinutes = endHour * 60 + endMinute;
 
-            if (inputTotalMinutes < startTotalMinutes || inputTotalMinutes >= endTotalMinutes) {
-                edtHour.setError("Giờ phải trong khoảng " + startTime + " - " + endTime);
+                if (inputTotalMinutes < startTotalMinutes || inputTotalMinutes >= endTotalMinutes) {
+                    edtHour.setError("Giờ phải trong khoảng " + startTime + " - " + endTime);
+                } else {
+                    edtHour.setError(null);
+                }
             } else {
+                // Clear error if no schedule is selected yet
                 edtHour.setError(null);
             }
 
@@ -264,7 +318,10 @@ public class BookingDialog extends Dialog {
     private void enableHourInput(boolean enabled) {
         edtHour.setEnabled(enabled);
         if (!enabled) {
-            edtHour.setText("");
+            // Only clear text if not in edit mode
+            if (appointmentToEdit == null) {
+                edtHour.setText("");
+            }
             edtHour.setHint("Chọn lịch làm việc trước");
             edtHour.setError(null);
         } else {
@@ -363,7 +420,9 @@ public class BookingDialog extends Dialog {
                     Log.e(TAG, "Failed to load schedule detail. Response code: " + response.code());
                     Toast.makeText(getContext(), "Lỗi tải thông tin lịch làm việc", Toast.LENGTH_SHORT).show();
                     clearDateAndWorkingHours();
-                    enableHourInput(false);
+                    if (appointmentToEdit == null) {
+                        enableHourInput(false);
+                    }
                 }
             }
 
@@ -372,7 +431,9 @@ public class BookingDialog extends Dialog {
                 Log.e(TAG, "Error loading schedule detail", t);
                 Toast.makeText(getContext(), "Lỗi kết nối khi tải lịch làm việc", Toast.LENGTH_SHORT).show();
                 clearDateAndWorkingHours();
-                enableHourInput(false);
+                if (appointmentToEdit == null) {
+                    enableHourInput(false);
+                }
             }
         });
     }
@@ -523,7 +584,8 @@ public class BookingDialog extends Dialog {
     }
 
     private boolean validateForm() {
-        if (selectedSchedule == null) {
+        // In edit mode, don't require schedule selection if hour is already set
+        if (appointmentToEdit == null && selectedSchedule == null) {
             Toast.makeText(getContext(), "Vui lòng chọn lịch làm việc", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -565,11 +627,25 @@ public class BookingDialog extends Dialog {
 
     private void createOrUpdateAppointment() {
         try {
-            String appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
+            String appointmentDate;
             String appointmentHour = edtHour.getText().toString().trim();
 
             if (!appointmentHour.contains(":")) {
                 appointmentHour += ":00";
+            }
+
+            if (appointmentToEdit != null) {
+                // For UPDATE: use existing appointment date or calculate from selected schedule
+                if (selectedSchedule != null) {
+                    appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
+                } else {
+                    // Extract date from existing appointment startDate
+                    String existingStartDate = appointmentToEdit.getStartDate();
+                    appointmentDate = existingStartDate.split("T")[0]; // Get date part only
+                }
+            } else {
+                // For CREATE: calculate from selected schedule
+                appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
             }
 
             String startDateTime = appointmentDate + "T" + appointmentHour + ":00.000Z";
@@ -586,6 +662,7 @@ public class BookingDialog extends Dialog {
                 appointment.setEndDate(endDateTime);
 
                 Log.d(TAG, "Updating appointment with ID: " + appointmentToEdit.getAppointmentId());
+                Log.d(TAG, "New startDate: " + startDateTime);
                 updateAppointment(appointment);
             } else {
                 // For CREATE: use AppointmentCreateRequest
