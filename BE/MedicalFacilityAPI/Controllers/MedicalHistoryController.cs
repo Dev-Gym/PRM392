@@ -21,7 +21,7 @@ namespace MedicalFacilityAPI.Controllers
         [HttpGet]
         public ActionResult<List<MedicalHistory>> GetMyMedicalHistory([FromQuery] int userId)
         {
-            var histories = _medicalHistoryService.GetAllByUserId(userId);
+            var histories = _medicalHistoryService.GetAllByUserId(userId).OrderByDescending(x=>x.HistoryId);
             return Ok(histories);
         }
         [HttpGet("{medicalHistoryId:int}")]
@@ -105,11 +105,12 @@ namespace MedicalFacilityAPI.Controllers
             return Ok(item);
         }
         [HttpPut("completed/{MedicalHistoryId:int}")]
-        public ActionResult<MedicalHistory> Completed(int MedicalHistoryId)
+        public ActionResult<MedicalHistory> Completed(int MedicalHistoryId, [FromBody] MedicalHistoryConfirmrequest req)
         {
 
             var item = _medicalHistoryService.GetById(MedicalHistoryId);
             item.Status = "Completed";
+            item.Description = req.Description;
             item.Payed = true;
             var result = _medicalHistoryService.Update(item);
             var appointment = _appointmentService.GetById((int)item.AppointmentId);
@@ -129,4 +130,12 @@ namespace MedicalFacilityAPI.Controllers
         public string Status { get; set; }
 
     }
+    public class MedicalHistoryConfirmrequest
+    {
+
+        public string Description { get; set; }
+
+
+    }
+
 } 

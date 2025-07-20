@@ -32,7 +32,7 @@ public interface ApiService {
     @PUT("api/MedicalHistory/cancelled/{MedicalHistoryId}")
     Call<MedicalHistory> cancelMedicalHistory(@Path("MedicalHistoryId") int historyId);
     @PUT("api/MedicalHistory/completed/{MedicalHistoryId}")
-    Call<MedicalHistory> completedMedicalHistory(@Path("MedicalHistoryId") int historyId);
+    Call<MedicalHistory> completedMedicalHistory(@Path("MedicalHistoryId") int historyId, @Body MedicalHistoryConfirmRequest request);
     // Appointments
     @GET("api/Appointments")
     Call<List<Appointment>> getAppointments();

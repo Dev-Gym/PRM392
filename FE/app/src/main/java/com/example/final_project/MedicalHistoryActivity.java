@@ -166,12 +166,45 @@ public class MedicalHistoryActivity extends AppCompatActivity {
     }
 
     private void showCompletedConfirm(MedicalHistory history) {
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("Xác nhận hoàn thành")
-                .setMessage("Bạn có chắc muốn đánh dấu bản ghi này là hoàn thành?")
-                .setPositiveButton("Hoàn thành", (dialog, which) -> completedMedicalHistory(history))
-                .setNegativeButton("Hủy", null)
-                .show();
+        // Create custom dialog với EditText để nhập description
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Hoàn thành khám bệnh");
+        builder.setMessage("Nhập mô tả kết quả khám:");
+
+        // Create EditText for description input
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setHint("Nhập mô tả kết quả khám...");
+        input.setMinLines(3);
+        input.setMaxLines(5);
+
+        // Set padding for better UI
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding, padding, padding);
+
+        builder.setView(input);
+
+        builder.setPositiveButton("Hoàn thành", (dialog, which) -> {
+            String description = input.getText().toString().trim();
+            if (description.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập mô tả", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            completedMedicalHistory(history, description);
+        });
+
+        builder.setNegativeButton("Hủy", (dialog, which) -> dialog.cancel());
+
+        android.app.AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Focus on EditText and show keyboard
+        input.requestFocus();
+        android.view.inputmethod.InputMethodManager imm =
+                (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        }
     }
 
     // API CALL METHODS - FULLY IMPLEMENTED
@@ -262,23 +295,34 @@ public class MedicalHistoryActivity extends AppCompatActivity {
         });
     }
 
-    private void completedMedicalHistory(MedicalHistory history) {
+    private void completedMedicalHistory(MedicalHistory history, String description) {
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d(TAG, "Completing medical history ID: " + history.getHistoryId());
+        Log.d(TAG, "Completing medical history ID: " + history.getHistoryId() + " with description: " + description);
 
-        apiService.completedMedicalHistory(history.getHistoryId()).enqueue(new Callback<MedicalHistory>() {
+        // Create request object with description
+        com.example.final_project.model.MedicalHistoryConfirmRequest request =
+                new com.example.final_project.model.MedicalHistoryConfirmRequest(description);
+
+        apiService.completedMedicalHistory(history.getHistoryId(), request).enqueue(new Callback<MedicalHistory>() {
             @Override
             public void onResponse(Call<MedicalHistory> call, Response<MedicalHistory> response) {
                 Log.d(TAG, "Completed response code: " + response.code());
 
                 if (response.isSuccessful()) {
                     Toast.makeText(MedicalHistoryActivity.this,
-                            "Đánh dấu hoàn thành thành công!", Toast.LENGTH_SHORT).show();
+                            "Hoàn thành khám bệnh thành công!", Toast.LENGTH_SHORT).show();
                     getMedicalHistory(-1); // Refresh list
                 } else {
                     Log.e(TAG, "Completed failed: " + response.code());
+                    if (response.errorBody() != null) {
+                        try {
+                            Log.e(TAG, "Error body: " + response.errorBody().string());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body", e);
+                        }
+                    }
                     Toast.makeText(MedicalHistoryActivity.this,
-                            "Lỗi đánh dấu hoàn thành: " + response.code(), Toast.LENGTH_SHORT).show();
+                            "Lỗi hoàn thành: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 

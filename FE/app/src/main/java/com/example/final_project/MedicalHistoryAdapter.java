@@ -102,13 +102,6 @@ public class MedicalHistoryAdapter extends RecyclerView.Adapter<MedicalHistoryAd
         } else if ("Cancelled".equalsIgnoreCase(status)) {
             // Cancelled: Only show Delete
             holder.btnDelete.setVisibility(View.VISIBLE);
-
-        } else {
-            // Default/Unknown status: Show all buttons
-            holder.btnDelete.setVisibility(View.VISIBLE);
-            holder.btnProcessing.setVisibility(View.VISIBLE);
-            holder.btnCompleted.setVisibility(View.VISIBLE);
-            holder.btnCancel.setVisibility(View.VISIBLE);
         }
     }
 
