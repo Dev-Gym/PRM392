@@ -28,13 +28,20 @@ public class MedicalExpertActivity extends AppCompatActivity {
         setContentView(R.layout.activity_medical_expert);
 
         rvDoctors = findViewById(R.id.rvDoctors);
-        doctorAdapter = new MedicalExpertAdapter(doctorList, doctor -> {
-            // Khi click vào bác sĩ, mở DoctorDetailActivity và truyền doctorId
-            Intent intent = new Intent(MedicalExpertActivity.this, DoctorDetailActivity.class);
-            intent.putExtra("token", token);
-            intent.putExtra("doctorId", doctor.getId()); // sẽ sửa lại bên dưới khi map
-            startActivity(intent);
-        });
+        doctorAdapter = new MedicalExpertAdapter(doctorList,
+                (MedicalExpert doctor) -> { // OnDoctorClickListener - click vào item
+                    Intent intent = new Intent(MedicalExpertActivity.this, DoctorDetailActivity.class);
+                    intent.putExtra("token", token);
+                    intent.putExtra("doctorId", doctor.getId());
+                    startActivity(intent);
+                },
+                (MedicalExpert doctor) -> { // OnScheduleClickListener - click vào button "Xem lịch"
+                    Intent intent = new Intent(MedicalExpertActivity.this, ExpertScheduleActivity.class);
+                    intent.putExtra("expertId", doctor.getId());
+                    intent.putExtra("expertName", doctor.getName());
+                    startActivity(intent);
+                }
+        );
         rvDoctors.setLayoutManager(new LinearLayoutManager(this));
         rvDoctors.setAdapter(doctorAdapter);
 

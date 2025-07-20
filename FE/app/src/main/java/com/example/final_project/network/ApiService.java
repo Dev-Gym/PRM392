@@ -66,4 +66,8 @@ public interface ApiService {
 
     @DELETE("api/Schedule/{id}")
     Call<Void> deleteSchedule(@Path("id") int id);
+
+    // Expert Schedules - NEW API
+    @GET("api/Schedule")
+        Call<List<ExpertSchedule>> getExpertSchedules(@Query("expertId") int expertId);
 }

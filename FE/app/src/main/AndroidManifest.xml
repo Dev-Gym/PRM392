@@ -29,6 +29,7 @@
         <activity android:name=".MedicalExpertActivity" />
         <activity android:name=".DoctorDetailActivity" />
         <activity android:name=".AppointmentHistoryActivity" />
+        <activity android:name=".ExpertScheduleActivity" />
         <!-- BookingDialog là dialog, không cần khai báo -->
     </application>
 
