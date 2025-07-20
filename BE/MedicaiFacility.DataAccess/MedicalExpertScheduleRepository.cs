@@ -76,6 +76,11 @@ namespace MedicaiFacility.Repository
             _context.SaveChanges() ;
             return schedule;
         }
+
+        public IEnumerable<MedicalExpertSchedule> GetAll()
+        {
+            return _context.MedicalExpertSchedules;
+        }
     }
   
 }

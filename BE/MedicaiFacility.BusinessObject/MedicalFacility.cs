@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MedicaiFacility.BusinessObject;
 
@@ -22,10 +23,12 @@ public partial class MedicalFacility
     public string ContactInfo { get; set; }
 
     public bool? IsActive { get; set; }
-
+    [JsonIgnore]
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    [JsonIgnore]
 
     public virtual ICollection<FacilityDepartment> FacilityDepartments { get; set; } = new List<FacilityDepartment>();
+    [JsonIgnore]
 
     public virtual ICollection<MedicalExpert> MedicalExperts { get; set; } = new List<MedicalExpert>();
 }

@@ -13,5 +13,6 @@
         MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
         MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule);
         void DeleteSchedulesByExpertId(int expertId);
+        IEnumerable<MedicalExpertSchedule> GetAll();
     }
 }

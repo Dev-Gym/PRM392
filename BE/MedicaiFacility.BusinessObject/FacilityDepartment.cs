@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MedicaiFacility.BusinessObject;
 
@@ -16,8 +17,9 @@ public partial class FacilityDepartment
     public DateTime? CreatedAt { get; set; }
 
     public bool? Status { get; set; }
-
+    [JsonIgnore]
     public virtual Department Department { get; set; }
+    [JsonIgnore]
 
     public virtual MedicalFacility Facility { get; set; }
 }

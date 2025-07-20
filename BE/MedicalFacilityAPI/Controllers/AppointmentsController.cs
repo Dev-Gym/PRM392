@@ -10,15 +10,21 @@ namespace MedicalFacilityAPI.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _appointmentService;
-        public AppointmentsController(IAppointmentService appointmentService)
+        private readonly IMedicalExpertScheduleService _medicalExpertScheduleService;
+        public AppointmentsController(IAppointmentService appointmentService, IMedicalExpertScheduleService medicalExpertScheduleService)
         {
             _appointmentService = appointmentService;
+            _medicalExpertScheduleService = medicalExpertScheduleService;
         }
 
         // Đặt lịch hẹn mới
         [HttpPost]
-        public IActionResult Create([FromBody] RequestAppointment req)
+        public ActionResult<string> Create([FromBody] RequestAppointment req)
         {
+            var checkValidSchedule = _medicalExpertScheduleService.IsValid(req.scheduleId, req.StartDate,  req.EndDate);
+            if (!checkValidSchedule.Equals("true")) {
+                return checkValidSchedule;
+            }
             var newAppointment = new Appointment { 
                 PatientId = req.PatientId,
                 ExpertId = req.ExpertId,
@@ -30,8 +36,9 @@ namespace MedicalFacilityAPI.Controllers
                 CreatedAt =DateTime.Now,
                 UpdatedAt = DateTime.Now,
             };
-            _appointmentService.Create(newAppointment);
-            return Ok(req);
+          var result=   _appointmentService.Create(newAppointment);
+            if (result == null) return BadRequest("tạo thất bại");
+            return Ok("Tạo thành công");
         }
         [HttpPut("{appointmentId:int}")]
         public ActionResult<Appointment> Update(int appointmentId, [FromBody] RequestAppointment req) {
@@ -71,18 +78,18 @@ namespace MedicalFacilityAPI.Controllers
     }
 
     public class RequestAppointment {
+        public int ScheduleId { get; set; }
+        public int PatientId { get; set; }
 
-        public int? PatientId { get; set; }
+        public int ExpertId { get; set; }
 
-        public int? ExpertId { get; set; }
-
-        public int? FacilityId { get; set; }
+        public int FacilityId { get; set; }
 
         public string Note { get; set; }
 
         public DateTime StartDate { get; set; }
 
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; }
 
         public string Status { get; set; }
     }
