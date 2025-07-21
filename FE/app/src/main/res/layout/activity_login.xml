@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="32dp"
+    android:background="#F5F5F5">
+
+    <!-- App Logo/Title -->
+    <TextView
+        android:id="@+id/tvAppTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Đặt Lịch Khám Bệnh"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="#2196F3"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="80dp"
+        android:layout_marginBottom="64dp"/>
+
+    <!-- Login Form Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardLogin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/tvAppTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="32dp">
+
+            <TextView
+                android:id="@+id/tvLoginTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Đăng Nhập"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="#333333"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginBottom="32dp"/>
+
+            <!-- Email Field -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilEmail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Email"
+                app:startIconDrawable="@android:drawable/ic_dialog_email"
+                app:endIconMode="clear_text"
+                app:layout_constraintTop_toBottomOf="@id/tvLoginTitle"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="24dp">
+
+                <EditText
+                    android:id="@+id/edtEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:autofillHints="emailAddress"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:minHeight="56dp"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Password Field -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPassword"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Mật khẩu"
+                app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                app:endIconMode="password_toggle"
+                app:layout_constraintTop_toBottomOf="@id/tilEmail"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp">
+
+                <EditText
+                    android:id="@+id/edtPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:autofillHints="password"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:minHeight="56dp"/>
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Login Button -->
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Đăng nhập"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#2196F3"
+                android:minHeight="56dp"
+                android:elevation="4dp"
+                app:layout_constraintTop_toBottomOf="@id/tilPassword"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="32dp"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Demo Info -->
+    <TextView
+        android:id="@+id/tvDemoInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Demo Account:\nEmail: levanc@example.com\nPassword: pass123"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:background="#E3F2FD"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/cardLogin"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

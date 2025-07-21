@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Đặt lịch mới"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#222222"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Expert ID (Read-only) -->
+        <TextView
+            android:id="@+id/lblExpertId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Expert ID:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/tvDialogTitle"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <TextView
+            android:id="@+id/tvExpertId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="3"
+            android:textSize="16sp"
+            android:textColor="#666666"
+            android:background="#F0F0F0"
+            android:padding="12dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintTop_toTopOf="@id/lblExpertId"
+            app:layout_constraintStart_toEndOf="@id/lblExpertId"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Patient ID -->
+        <TextView
+            android:id="@+id/lblPatientId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Patient ID:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/tvExpertId"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <EditText
+            android:id="@+id/edtPatientId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Nhập Patient ID"
+            android:inputType="number"
+            android:minHeight="48dp"
+            android:textColor="#222222"
+            app:layout_constraintTop_toBottomOf="@id/lblPatientId"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Facility Selection -->
+        <TextView
+            android:id="@+id/lblFacilityId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Chọn cơ sở y tế:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/edtPatientId"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerFacility"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            app:layout_constraintTop_toBottomOf="@id/lblFacilityId"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Schedule Spinner -->
+        <TextView
+            android:id="@+id/lblSchedule"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Chọn lịch làm việc:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/spinnerFacility"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerSchedule"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            app:layout_constraintTop_toBottomOf="@id/lblSchedule"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Selected Date Display -->
+        <TextView
+            android:id="@+id/tvSelectedDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Ngày: Chưa chọn"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:background="#F8F8F8"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@id/spinnerSchedule"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Working Hours Display -->
+        <TextView
+            android:id="@+id/tvWorkingHours"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Giờ làm việc: Chưa chọn"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:background="#F8F8F8"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@id/tvSelectedDate"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Hour Input -->
+        <TextView
+            android:id="@+id/lblHour"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Chọn giờ hẹn:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/tvWorkingHours"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <EditText
+            android:id="@+id/edtHour"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Chọn lịch làm việc trước"
+            android:inputType="time"
+            android:minHeight="48dp"
+            android:textColor="#222222"
+            android:enabled="false"
+            app:layout_constraintTop_toBottomOf="@id/lblHour"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+        <!-- Note -->
+        <EditText
+            android:id="@+id/edtNote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Ghi chú (tùy chọn)"
+            android:inputType="textMultiLine"
+            android:minHeight="48dp"
+            android:maxLines="3"
+            android:textColor="#222222"
+            app:layout_constraintTop_toBottomOf="@id/edtHour"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp"/>
+
+        <!-- Buttons -->
+        <Button
+            android:id="@+id/btnBook"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Đặt lịch"
+            app:layout_constraintTop_toBottomOf="@id/edtNote"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnCancel"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Hủy"
+            app:layout_constraintTop_toBottomOf="@id/edtNote"
+            app:layout_constraintStart_toEndOf="@id/btnBook"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="8dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

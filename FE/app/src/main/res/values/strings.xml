@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">final_project</string>
+    <string name="book_appointment">Đặt lịch</string>
+    <string name="cancel">Hủy</string>
+</resources>
