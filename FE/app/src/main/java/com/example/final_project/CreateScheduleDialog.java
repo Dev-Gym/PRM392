@@ -79,8 +79,6 @@ public class CreateScheduleDialog extends Dialog {
         }
     }
 
-    // Key updates to CreateScheduleDialog.java
-
     private void initViews() {
         edtExpertId = findViewById(R.id.edtExpertId);
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
@@ -373,22 +371,67 @@ public class CreateScheduleDialog extends Dialog {
 
     private void createScheduleWithRequest(ScheduleRequest request) {
         ApiService apiService = RetrofitClient.getInstance();
-        apiService.createScheduleWithRequest(request).enqueue(new Callback<Schedule>() {
+        apiService.createScheduleWithRequest(request).enqueue(new Callback<String>() {
             @Override
-            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
+            public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful()) {
-                    Toast.makeText(getContext(), "Tạo lịch thành công!", Toast.LENGTH_SHORT).show();
+                    String responseMessage = response.body();
+                    Log.d(TAG, "Create success response: " + responseMessage);
+                    Log.d(TAG, "Response code: " + response.code());
+                    Log.d(TAG, "Response headers: " + response.headers());
+
+                    // Clean up the response message by removing quotes if present
+                    if (responseMessage != null) {
+                        responseMessage = responseMessage.replace("\"", "").trim();
+                        Log.d(TAG, "Cleaned response message: " + responseMessage);
+                    }
+
+                    // Display the actual message from server
+                    if (responseMessage != null && !responseMessage.isEmpty()) {
+                        Toast.makeText(getContext(), responseMessage, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Tạo lịch thành công!", Toast.LENGTH_SHORT).show();
+                    }
+
                     callback.onScheduleCreated(true);
                     dismiss();
                 } else {
+                    // Handle error response with detailed message
+                    String errorMessage = "Lỗi tạo lịch";
+
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error body: " + errorBody);
+
+                            // Remove quotes from error message if present
+                            errorBody = errorBody.replace("\"", "").trim();
+
+                            // Check if error message contains duplicate schedule message
+                            if (errorBody.contains("đã tồn tại lịch này rồi")) {
+                                errorMessage = "Lịch làm việc cho ngày này đã tồn tại. Vui lòng chọn ngày khác.";
+                            } else if (errorBody.contains("not found expert id")) {
+                                errorMessage = "Không tìm thấy chuyên gia với ID này.";
+                            } else {
+                                // Use the actual error message from server
+                                errorMessage = errorBody.isEmpty() ? "Lỗi tạo lịch: " + response.code() : errorBody;
+                            }
+                        } else {
+                            errorMessage = "Lỗi tạo lịch: " + response.code();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing error response", e);
+                        errorMessage = "Lỗi tạo lịch: " + response.code();
+                    }
+
                     Log.e(TAG, "Create failed: " + response.code());
-                    Toast.makeText(getContext(), "Lỗi tạo lịch: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     callback.onScheduleCreated(false);
                 }
             }
 
             @Override
-            public void onFailure(Call<Schedule> call, Throwable t) {
+            public void onFailure(Call<String> call, Throwable t) {
                 Log.e(TAG, "Create error", t);
                 Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 callback.onScheduleCreated(false);
@@ -406,8 +449,32 @@ public class CreateScheduleDialog extends Dialog {
                     callback.onScheduleCreated(true);
                     dismiss();
                 } else {
+                    // Handle error response with detailed message
+                    String errorMessage = "Lỗi cập nhật";
+
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Update error body: " + errorBody);
+
+                            // Check if error message contains duplicate schedule message
+                            if (errorBody.contains("đã tồn tại lịch này rồi")) {
+                                errorMessage = "Lịch làm việc cho ngày này đã tồn tại. Vui lòng chọn ngày khác.";
+                            } else if (errorBody.contains("not found expert id")) {
+                                errorMessage = "Không tìm thấy chuyên gia với ID này.";
+                            } else {
+                                errorMessage = "Lỗi cập nhật: " + response.code();
+                            }
+                        } else {
+                            errorMessage = "Lỗi cập nhật: " + response.code();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing error response", e);
+                        errorMessage = "Lỗi cập nhật: " + response.code();
+                    }
+
                     Log.e(TAG, "Update failed: " + response.code());
-                    Toast.makeText(getContext(), "Lỗi cập nhật: " + response.code(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
                     callback.onScheduleCreated(false);
                 }
             }

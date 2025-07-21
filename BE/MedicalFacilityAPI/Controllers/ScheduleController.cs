@@ -37,12 +37,12 @@ namespace MedicalFacilityAPI.Controllers
 
         // POST api/<ScheduleController>
         [HttpPost]
-        public ActionResult<MedicalExpertSchedule> Post([FromBody] MedicalExpertScheduleRequest request)
+        public ActionResult<string> Post([FromBody] MedicalExpertScheduleRequest request)
         {
             var allUser = _userService.GetAllExpertMedical();
             if (allUser != null) {
                 var check = allUser.Where(x => x.UserId == request.ExpertId);
-                if (check == null) return BadRequest(new {  message = "not found expert id"});
+                if (check == null) return BadRequest("not found expert id");
             }
             var item = new MedicalExpertSchedule {
                 ExpertId = request.ExpertId,
@@ -51,7 +51,9 @@ namespace MedicalFacilityAPI.Controllers
                 DayOfWeek = request.DayOfWeek,
                 IsActive = true
             };
-            return _mediicalExpertScheduleService.AddMedicalExpertSchedule(item);
+            var result = _mediicalExpertScheduleService.AddMedicalExpertSchedule(item);
+            if(!result.Equals("Tạo thành công")) return BadRequest(result);
+            return Ok(result);
         }
 
         // PUT api/<ScheduleController>/5

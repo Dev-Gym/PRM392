@@ -82,7 +82,7 @@ public interface ApiService {
     Call<List<Schedule>> getSchedules();
 
     @POST("api/Schedule")
-    Call<Schedule> createScheduleWithRequest(@Body ScheduleRequest request);
+    Call<String> createScheduleWithRequest(@Body ScheduleRequest request);
 
     @PUT("api/Schedule/{id}")
     Call<Schedule> updateScheduleWithRequest(@Path("id") int id, @Body ScheduleRequest request);
