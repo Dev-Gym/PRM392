@@ -21,18 +21,18 @@ namespace MedicaiFacility.DataAccess
         {
             try
             {
-            //    var conflict = _context.Appointments.Any(x =>
-            // x.Status == "Confirmed" &&
-            // (
-            //     (appointment.StartDate <= x.EndDate) &&
-            //     (appointment.EndDate >= x.StartDate)
-            // )
-            //);
+                var conflict = _context.Appointments.FirstOrDefault(x =>
+             x.Status == "Confirmed" &&
+             (
+                 (appointment.StartDate < x.EndDate) &&
+                 (appointment.EndDate > x.StartDate)
+             )
+            );
 
-            //    if (conflict)
-            //    {
-            //        return null;
-            //    }
+                if (conflict!=null)
+                {
+                    return null;
+                }
                 _context.ChangeTracker.Clear();
                 _context.Appointments.Add(appointment);
                 _context.SaveChanges();
@@ -86,6 +86,7 @@ namespace MedicaiFacility.DataAccess
 
         public Appointment Update(Appointment appointment)
         {
+            _context.ChangeTracker.Clear();
             _context.Appointments.Update(appointment);
             _context.SaveChanges();
             return appointment;

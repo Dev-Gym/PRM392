@@ -84,13 +84,13 @@ namespace MedicalFacilityAPI.Controllers
         {
             var existingAppointment = _appointmentService.GetById(appointmentId);
             if(existingAppointment == null) return NotFound();
-           
+            
            
             existingAppointment.Status = "Confirmed";
             existingAppointment.UpdatedAt = DateTime.Now;
 
             var result = _appointmentService.Update(existingAppointment);
-       
+            _appointmentService.CancelAllAppointmentInTime(experId: (int)existingAppointment.ExpertId, existingAppointment);
             var newHistory = new MedicalHistory
             {
                 AppointmentId = appointmentId,
@@ -126,6 +126,12 @@ namespace MedicalFacilityAPI.Controllers
         public ActionResult<List<Appointment>> GetAppointments([FromQuery] int userId)
         {
             var appointments = _appointmentService.GetAllByUserId( userId);
+            return Ok(appointments);
+        }
+        [HttpGet("unvaliable/{experId:int}")]
+        public ActionResult<List<Appointment>> GetUnvaliableAppointments(int experId)
+        {
+            var appointments = _appointmentService.GetAllByUserId(experId).Where(x=>x.ExpertId== experId&&x.Status== "Confirmed");
             return Ok(appointments);
         }
         [HttpGet("{appointmentId:int}")]

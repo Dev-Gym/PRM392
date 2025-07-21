@@ -81,5 +81,14 @@ namespace MedicaiFacility.Service
 		
 			 return _appointmentRepository.Update(appointment);	
 		}
+		public void CancelAllAppointmentInTime(int experId, Appointment appointment) {
+			var list = _appointmentRepository.GetAll().Where(x=>x.AppointmentId!=appointment.AppointmentId&&x.StartDate == appointment.StartDate && x.EndDate == appointment.EndDate && x.ExpertId == experId&&x.Status== "Pending");
+			foreach (var item in list) {
+				item.Status = "Cancelled";
+				item.Note = "Hủy vì đã có lịch confirmed cùng khung giờ";
+				_appointmentRepository.Update(item);
+			}
+
+		}
 	}
 }

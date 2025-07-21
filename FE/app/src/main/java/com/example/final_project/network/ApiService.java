@@ -57,6 +57,8 @@ public interface ApiService {
     Call<Appointment> cancelAppointment(@Path("appointmentId") int appointmentId);
     @PUT("api/Appointments/delete/{id}")
     Call<Appointment> deleteAppointment(@Path("id") int id);
+    @GET("api/Appointments/unvaliable/{expertId}")
+    Call<List<Appointment>> getUnavailableAppointments(@Path("expertId") int expertId);
 
     // Medical Experts
     @GET("api/User/get-all-experts")
