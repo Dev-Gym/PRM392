@@ -85,8 +85,8 @@ public interface ApiService {
     @PUT("api/Schedule/{id}")
     Call<Schedule> updateScheduleWithRequest(@Path("id") int id, @Body ScheduleRequest request);
 
-    @DELETE("api/Schedule/{id}")
-    Call<Void> deleteSchedule(@Path("id") int id);
+    @PUT("api/Schedule/delete/{id}")
+    Call<Schedule> deleteSchedule(@Path("id") int id);
 
     @GET("api/Schedule/{id}")
     Call<Schedule> getScheduleById(@Path("id") int scheduleId);

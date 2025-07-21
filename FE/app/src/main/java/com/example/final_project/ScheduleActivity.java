@@ -259,28 +259,34 @@ public class ScheduleActivity extends AppCompatActivity {
 
     private void deleteSchedule(int id) {
         ApiService apiService = RetrofitClient.getInstance();
-        apiService.deleteSchedule(id).enqueue(new Callback<Void>() {
+        Log.d(TAG, "Soft deleting schedule ID: " + id);
+
+        apiService.deleteSchedule(id).enqueue(new Callback<Schedule>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
+            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
+                Log.d(TAG, "Delete response code: " + response.code());
+
                 if (response.isSuccessful()) {
-                    // Remove from list and update UI
-                    for (int i = 0; i < scheduleList.size(); i++) {
-                        if (scheduleList.get(i).getScheduleId() == id) {
-                            scheduleList.remove(i);
-                            break;
-                        }
-                    }
-                    scheduleAdapter.notifyDataSetChanged();
-                    clearSelection();
                     Toast.makeText(ScheduleActivity.this, "Xóa lịch thành công!", Toast.LENGTH_SHORT).show();
+                    // Refresh the entire list instead of removing locally
+                    // because soft delete might change the schedule's status
+                    getSchedules();
+                    clearSelection();
                 } else {
                     Log.e(TAG, "Delete schedule failed: " + response.code());
+                    if (response.errorBody() != null) {
+                        try {
+                            Log.e(TAG, "Error body: " + response.errorBody().string());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading error body", e);
+                        }
+                    }
                     Toast.makeText(ScheduleActivity.this, "Lỗi xóa lịch: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
+            public void onFailure(Call<Schedule> call, Throwable t) {
                 Log.e(TAG, "Delete schedule error: " + t.getMessage());
                 Toast.makeText(ScheduleActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
