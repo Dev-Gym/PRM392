@@ -3,6 +3,7 @@ package com.example.final_project;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,7 +21,12 @@ public class MainActivity extends AppCompatActivity {
     private ApiService apiService;
 
     private TextView tvWelcome, tvUserInfo;
-    private Button btnLogout;
+    private Button btnDoctors, btnHistory, btnSchedule, btnAllSchedules, btnLogout;
+
+    // User info
+    private String currentUserType;
+    private String currentUserName;
+    private int currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,40 +43,133 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         setupUserInfo();
+        setupUIBasedOnUserType(); // NEW: Setup UI based on user type
         setupClickListeners();
 
         // Test API calls
-        testApiCalls();
+      //  testApiCalls();
     }
 
     private void initViews() {
         tvWelcome = findViewById(R.id.tvWelcome);
         tvUserInfo = findViewById(R.id.tvUserInfo);
+        btnDoctors = findViewById(R.id.btnDoctors);
+        btnHistory = findViewById(R.id.btnHistory);
+        btnSchedule = findViewById(R.id.btnSchedule);
+        btnAllSchedules = findViewById(R.id.btnAllSchedules);
         btnLogout = findViewById(R.id.btnLogout);
     }
 
     private void setupUserInfo() {
-        String userName = LoginActivity.getCurrentUserName(this);
-        String userType = LoginActivity.getCurrentUserType(this);
+        currentUserName = LoginActivity.getCurrentUserName(this);
+        currentUserType = LoginActivity.getCurrentUserType(this);
         String userEmail = LoginActivity.getCurrentUserEmail(this);
-        int userId = LoginActivity.getCurrentUserId(this);
+        currentUserId = LoginActivity.getCurrentUserId(this);
 
-        tvWelcome.setText("Chào mừng, " + userName + "!");
-        tvUserInfo.setText("ID: " + userId + " | " + userType + "\n" + userEmail);
+        tvWelcome.setText("Chào mừng, " + currentUserName + "!");
+        tvUserInfo.setText("ID: " + currentUserId + " | " + currentUserType + "\n" + userEmail);
 
-        Log.d(TAG, "User info - ID: " + userId + ", Name: " + userName + ", Type: " + userType);
+        Log.d(TAG, "User info - ID: " + currentUserId + ", Name: " + currentUserName + ", Type: " + currentUserType);
+    }
+
+    /**
+     * NEW METHOD: Setup UI components based on user type
+     */
+    private void setupUIBasedOnUserType() {
+        Log.d(TAG, "Setting up UI for user type: " + currentUserType);
+
+        if ("Patient".equals(currentUserType)) {
+            // PATIENT: Disable "Xem Tất Cả Lịch Làm Việc" button
+            btnAllSchedules.setEnabled(false);
+            btnAllSchedules.setVisibility(View.GONE); // Hide completely
+            Log.d(TAG, "Patient: Disabled All Schedules button");
+
+            // Patient can see all other buttons
+            btnDoctors.setEnabled(true);
+            btnHistory.setEnabled(true);
+            btnSchedule.setEnabled(true);
+            btnLogout.setEnabled(true);
+
+            // Update button text for Patient context
+            btnSchedule.setText("Lịch Cá Nhân (Khám bệnh)");
+
+        } else if ("MedicalExpert".equals(currentUserType)) {
+            // MEDICAL EXPERT: Disable "Xem Danh Sách Bác Sĩ" button
+            btnDoctors.setEnabled(false);
+            btnDoctors.setVisibility(View.GONE); // Hide completely
+            Log.d(TAG, "MedicalExpert: Disabled Doctors button");
+
+            // Medical Expert can see all other buttons
+            btnHistory.setEnabled(true);
+            btnSchedule.setEnabled(true);
+            btnAllSchedules.setEnabled(true);
+            btnLogout.setEnabled(true);
+
+            // Update button text for MedicalExpert context
+            btnHistory.setText("Quản Lý Lịch Hẹn");
+            btnSchedule.setText("Lịch Cá Nhân (Khám bệnh)");
+            btnAllSchedules.setText("Quản Lý Lịch Làm Việc");
+
+        } else if ("Admin".equals(currentUserType)) {
+            // ADMIN: Can see all buttons
+            btnDoctors.setEnabled(true);
+            btnHistory.setEnabled(true);
+            btnSchedule.setEnabled(true);
+            btnAllSchedules.setEnabled(true);
+            btnLogout.setEnabled(true);
+
+            // Update button text for Admin context
+            btnHistory.setText("Quản Lý Tất Cả Lịch Hẹn");
+            btnSchedule.setText("Lịch Sử Y Tế");
+            btnAllSchedules.setText("Quản Lý Lịch Làm Việc");
+
+            Log.d(TAG, "Admin: All buttons enabled");
+
+        } else {
+            // UNKNOWN USER TYPE: Enable all buttons as fallback
+            Log.w(TAG, "Unknown user type: " + currentUserType + ". Enabling all buttons.");
+            btnDoctors.setEnabled(true);
+            btnHistory.setEnabled(true);
+            btnSchedule.setEnabled(true);
+            btnAllSchedules.setEnabled(true);
+            btnLogout.setEnabled(true);
+        }
+
+        // Visual feedback for disabled buttons
+        updateButtonAppearance();
+    }
+
+    /**
+     * Update button appearance based on enabled/disabled state
+     */
+    private void updateButtonAppearance() {
+        // For disabled/hidden buttons, also set visual feedback
+        if (!btnDoctors.isEnabled() || btnDoctors.getVisibility() == View.GONE) {
+            btnDoctors.setAlpha(0.5f);
+        } else {
+            btnDoctors.setAlpha(1.0f);
+        }
+
+        if (!btnAllSchedules.isEnabled() || btnAllSchedules.getVisibility() == View.GONE) {
+            btnAllSchedules.setAlpha(0.5f);
+        } else {
+            btnAllSchedules.setAlpha(1.0f);
+        }
+
+        // Always ensure logout is visible for all user types
+        btnLogout.setVisibility(View.VISIBLE);
+        btnLogout.setAlpha(1.0f);
     }
 
     private void setupClickListeners() {
-        Button btnDoctors = findViewById(R.id.btnDoctors);
-        Button btnHistory = findViewById(R.id.btnHistory);
-        Button btnSchedule = findViewById(R.id.btnSchedule);
-        Button btnAllSchedules = findViewById(R.id.btnAllSchedules);
-
         btnDoctors.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, MedicalExpertActivity.class);
-            intent.putExtra("token", "Bearer test-token");
-            startActivity(intent);
+            if (btnDoctors.isEnabled()) {
+                Intent intent = new Intent(MainActivity.this, MedicalExpertActivity.class);
+                intent.putExtra("token", "Bearer test-token");
+                startActivity(intent);
+            } else {
+                showAccessDeniedMessage("Chức năng này chỉ dành cho bệnh nhân");
+            }
         });
 
         btnHistory.setOnClickListener(v -> {
@@ -87,9 +186,13 @@ public class MainActivity extends AppCompatActivity {
 
         // All Schedules button
         btnAllSchedules.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ScheduleActivity.class);
-            intent.putExtra("token", "Bearer test-token");
-            startActivity(intent);
+            if (btnAllSchedules.isEnabled()) {
+                Intent intent = new Intent(MainActivity.this, ScheduleActivity.class);
+                intent.putExtra("token", "Bearer test-token");
+                startActivity(intent);
+            } else {
+                showAccessDeniedMessage("Chức năng này chỉ dành cho nhân viên y tế và quản trị viên");
+            }
         });
 
         // Logout button
@@ -104,6 +207,13 @@ public class MainActivity extends AppCompatActivity {
                     .setNegativeButton("Hủy", null)
                     .show();
         });
+    }
+
+    /**
+     * Show access denied message for disabled features
+     */
+    private void showAccessDeniedMessage(String message) {
+        Toast.makeText(this, "Không có quyền truy cập: " + message, Toast.LENGTH_LONG).show();
     }
 
     private void goToLoginActivity() {
