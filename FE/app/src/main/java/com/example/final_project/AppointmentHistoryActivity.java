@@ -18,19 +18,57 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AppointmentHistoryActivity extends AppCompatActivity {
+    private static final String TAG = "AppointmentHistoryActivity";
+
     private String token;
     private RecyclerView rvAppointments;
     private AppointmentAdapter appointmentAdapter;
     private List<Appointment> appointmentList = new ArrayList<>();
+    private EditText edtUserId;
+    private Button btnFilter;
+    private int currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_appointment_history);
 
-        setTitle("Lịch sử người");
+        // Get current user info
+        currentUserId = LoginActivity.getCurrentUserId(this);
+        String currentUserName = LoginActivity.getCurrentUserName(this);
 
+        setTitle("Lịch hẹn của " + currentUserName);
+
+        initViews();
+        setupRecyclerView();
+        disableFilterControls();
+
+        token = getIntent().getStringExtra("token");
+
+        // Load appointments for current user automatically
+        getAppointmentsForCurrentUser();
+    }
+
+    private void initViews() {
         rvAppointments = findViewById(R.id.rvAppointments);
+        edtUserId = findViewById(R.id.edtUserId);
+        btnFilter = findViewById(R.id.btnFilter);
+    }
+
+    private void disableFilterControls() {
+        // Auto-fill with current user ID and disable editing
+        edtUserId.setText(String.valueOf(currentUserId));
+        edtUserId.setEnabled(false);
+        edtUserId.setAlpha(0.6f);
+        edtUserId.setHint("User ID hiện tại: " + currentUserId);
+
+        // Hide filter button since we auto-load user's appointments
+        btnFilter.setVisibility(android.view.View.GONE);
+
+        Log.d(TAG, "Filter controls disabled for user ID: " + currentUserId);
+    }
+
+    private void setupRecyclerView() {
         appointmentAdapter = new AppointmentAdapter(appointmentList,
                 new AppointmentAdapter.OnAppointmentActionListener() {
                     @Override
@@ -43,7 +81,6 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
                         showDeleteConfirm(appointment);
                     }
 
-                    // ADD THESE NEW METHODS FOR CONFIRM/CANCEL
                     @Override
                     public void onConfirm(Appointment appointment) {
                         showConfirmDialog(appointment);
@@ -56,52 +93,55 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
                 });
         rvAppointments.setLayoutManager(new LinearLayoutManager(this));
         rvAppointments.setAdapter(appointmentAdapter);
-
-        EditText edtUserId = findViewById(R.id.edtUserId);
-        Button btnFilter = findViewById(R.id.btnFilter);
-
-        btnFilter.setOnClickListener(v -> {
-            String userIdStr = edtUserId.getText().toString().trim();
-            int userId = -1;
-            if (!userIdStr.isEmpty()) {
-                try {
-                    userId = Integer.parseInt(userIdStr);
-                } catch (NumberFormatException e) {
-                    userId = -1;
-                }
-            }
-            getAppointments(userId);
-        });
-
-        // Mặc định load tất cả lịch sử khi vào màn hình
-        getAppointments(-1);
     }
 
-    private void getAppointments(int userId) {
-        ApiService apiService = RetrofitClient.getInstance();
-        Call<List<Appointment>> call;
-        if (userId > 0) {
-            call = apiService.getAppointmentsByUserId(userId);
-        } else {
-            call = apiService.getAppointments();
+    private void getAppointmentsForCurrentUser() {
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin user. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
-        call.enqueue(new Callback<List<Appointment>>() {
+
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading appointments for user ID: " + currentUserId);
+
+        apiService.getAppointmentsByUserId(currentUserId).enqueue(new Callback<List<Appointment>>() {
             @Override
             public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
+                Log.d(TAG, "API response code: " + response.code());
+
                 if (response.isSuccessful() && response.body() != null) {
                     appointmentList.clear();
                     appointmentList.addAll(response.body());
                     appointmentAdapter.notifyDataSetChanged();
+
+                    Log.d(TAG, "Loaded " + appointmentList.size() + " appointments for user " + currentUserId);
+
+                    if (appointmentList.isEmpty()) {
+                        Toast.makeText(AppointmentHistoryActivity.this,
+                                "Bạn chưa có lịch hẹn nào", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(AppointmentHistoryActivity.this,
+                                "Tải được " + appointmentList.size() + " lịch hẹn", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    Log.e("API", "Get appointments failed: " + response.code());
+                    Log.e(TAG, "Get appointments failed: " + response.code());
                     Toast.makeText(AppointmentHistoryActivity.this,
-                            "Lỗi tải danh sách lịch hẹn", Toast.LENGTH_SHORT).show();
+                            "Lỗi tải danh sách lịch hẹn: " + response.code(), Toast.LENGTH_SHORT).show();
+
+                    if (response.errorBody() != null) {
+                        try {
+                            Log.e(TAG, "Error body: " + response.errorBody().string());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading errorBody", e);
+                        }
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<List<Appointment>> call, Throwable t) {
-                Log.e("API", "Get appointments error: " + t.getMessage());
+                Log.e(TAG, "Get appointments error: " + t.getMessage(), t);
                 Toast.makeText(AppointmentHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -111,14 +151,14 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
     private void showEditDialog(Appointment appointment) {
         // Load full appointment data trước khi show dialog
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d("API", "Loading appointment details for ID: " + appointment.getAppointmentId());
+        Log.d(TAG, "Loading appointment details for ID: " + appointment.getAppointmentId());
 
         apiService.getAppointment(appointment.getAppointmentId()).enqueue(new Callback<Appointment>() {
             @Override
             public void onResponse(Call<Appointment> call, Response<Appointment> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     Appointment fullAppointment = response.body();
-                    Log.d("API", "Full appointment loaded: " + fullAppointment.getStartDate());
+                    Log.d(TAG, "Full appointment loaded: " + fullAppointment.getStartDate());
 
                     BookingDialog dialog = new BookingDialog(
                             AppointmentHistoryActivity.this,
@@ -128,14 +168,14 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
                                 if (success) {
                                     Toast.makeText(AppointmentHistoryActivity.this,
                                             "Cập nhật lịch hẹn thành công!", Toast.LENGTH_SHORT).show();
-                                    getAppointments(-1); // Refresh list
+                                    getAppointmentsForCurrentUser(); // Refresh list with current user's appointments
                                 }
                             },
                             fullAppointment // Pass full appointment với startDate
                     );
                     dialog.show();
                 } else {
-                    Log.e("API", "Get appointment failed: " + response.code());
+                    Log.e(TAG, "Get appointment failed: " + response.code());
                     Toast.makeText(AppointmentHistoryActivity.this,
                             "Lỗi tải thông tin lịch hẹn", Toast.LENGTH_SHORT).show();
                 }
@@ -143,14 +183,13 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Appointment> call, Throwable t) {
-                Log.e("API", "Get appointment error: " + t.getMessage());
+                Log.e(TAG, "Get appointment error: " + t.getMessage());
                 Toast.makeText(AppointmentHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // ADD NEW METHOD FOR CONFIRM APPOINTMENT
     private void showConfirmDialog(Appointment appointment) {
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Xác nhận lịch hẹn")
@@ -160,7 +199,6 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ADD NEW METHOD FOR CANCEL APPOINTMENT
     private void showCancelDialog(Appointment appointment) {
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Hủy lịch hẹn")
@@ -170,27 +208,26 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ADD API CALL FOR CONFIRM APPOINTMENT
     private void confirmAppointment(Appointment appointment) {
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d("API", "Confirming appointmentId: " + appointment.getAppointmentId());
+        Log.d(TAG, "Confirming appointmentId: " + appointment.getAppointmentId());
 
         apiService.confirmAppointment(appointment.getAppointmentId()).enqueue(new Callback<Appointment>() {
             @Override
             public void onResponse(Call<Appointment> call, Response<Appointment> response) {
-                Log.d("API", "Confirm response code: " + response.code());
+                Log.d(TAG, "Confirm response code: " + response.code());
 
                 if (response.isSuccessful()) {
                     Toast.makeText(AppointmentHistoryActivity.this,
                             "Xác nhận lịch hẹn thành công!", Toast.LENGTH_SHORT).show();
-                    getAppointments(-1); // Refresh list
+                    getAppointmentsForCurrentUser(); // Refresh list
                 } else {
-                    Log.e("API", "Confirm failed: " + response.code());
+                    Log.e(TAG, "Confirm failed: " + response.code());
                     if (response.errorBody() != null) {
                         try {
-                            Log.e("API", "Confirm error body: " + response.errorBody().string());
+                            Log.e(TAG, "Confirm error body: " + response.errorBody().string());
                         } catch (Exception e) {
-                            Log.e("API", "Error reading errorBody", e);
+                            Log.e(TAG, "Error reading errorBody", e);
                         }
                     }
                     Toast.makeText(AppointmentHistoryActivity.this,
@@ -200,34 +237,33 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Appointment> call, Throwable t) {
-                Log.e("API", "Confirm appointment error: " + t.getMessage());
+                Log.e(TAG, "Confirm appointment error: " + t.getMessage());
                 Toast.makeText(AppointmentHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // ADD API CALL FOR CANCEL APPOINTMENT
     private void cancelAppointment(Appointment appointment) {
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d("API", "Cancelling appointmentId: " + appointment.getAppointmentId());
+        Log.d(TAG, "Cancelling appointmentId: " + appointment.getAppointmentId());
 
         apiService.cancelAppointment(appointment.getAppointmentId()).enqueue(new Callback<Appointment>() {
             @Override
             public void onResponse(Call<Appointment> call, Response<Appointment> response) {
-                Log.d("API", "Cancel response code: " + response.code());
+                Log.d(TAG, "Cancel response code: " + response.code());
 
                 if (response.isSuccessful()) {
                     Toast.makeText(AppointmentHistoryActivity.this,
                             "Hủy lịch hẹn thành công!", Toast.LENGTH_SHORT).show();
-                    getAppointments(-1); // Refresh list
+                    getAppointmentsForCurrentUser(); // Refresh list
                 } else {
-                    Log.e("API", "Cancel failed: " + response.code());
+                    Log.e(TAG, "Cancel failed: " + response.code());
                     if (response.errorBody() != null) {
                         try {
-                            Log.e("API", "Cancel error body: " + response.errorBody().string());
+                            Log.e(TAG, "Cancel error body: " + response.errorBody().string());
                         } catch (Exception e) {
-                            Log.e("API", "Error reading errorBody", e);
+                            Log.e(TAG, "Error reading errorBody", e);
                         }
                     }
                     Toast.makeText(AppointmentHistoryActivity.this,
@@ -237,7 +273,7 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Appointment> call, Throwable t) {
-                Log.e("API", "Cancel appointment error: " + t.getMessage());
+                Log.e(TAG, "Cancel appointment error: " + t.getMessage());
                 Toast.makeText(AppointmentHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -255,25 +291,25 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
 
     private void deleteAppointment(Appointment appointment) {
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d("API", "Delete appointmentId: " + appointment.getAppointmentId());
+        Log.d(TAG, "Delete appointmentId: " + appointment.getAppointmentId());
 
         apiService.deleteAppointment(appointment.getAppointmentId()).enqueue(new Callback<Appointment>() {
             @Override
             public void onResponse(Call<Appointment> call, Response<Appointment> response) {
-                Log.d("API", "Delete response code: " + response.code());
+                Log.d(TAG, "Delete response code: " + response.code());
 
                 if (!response.isSuccessful() && response.errorBody() != null) {
                     try {
-                        Log.e("API", "Delete error body: " + response.errorBody().string());
+                        Log.e(TAG, "Delete error body: " + response.errorBody().string());
                     } catch (Exception e) {
-                        Log.e("API", "Error reading errorBody", e);
+                        Log.e(TAG, "Error reading errorBody", e);
                     }
                 }
 
                 if (response.isSuccessful()) {
                     Toast.makeText(AppointmentHistoryActivity.this,
                             "Xóa lịch hẹn thành công!", Toast.LENGTH_SHORT).show();
-                    getAppointments(-1); // Refresh list
+                    getAppointmentsForCurrentUser(); // Refresh list
                 } else {
                     Toast.makeText(AppointmentHistoryActivity.this,
                             "Lỗi xóa lịch hẹn", Toast.LENGTH_SHORT).show();
@@ -282,7 +318,7 @@ public class AppointmentHistoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Appointment> call, Throwable t) {
-                Log.e("API", "Delete appointment error: " + t.getMessage());
+                Log.e(TAG, "Delete appointment error: " + t.getMessage());
                 Toast.makeText(AppointmentHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
