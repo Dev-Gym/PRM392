@@ -1,5 +1,6 @@
 package com.example.final_project;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.AppointmentViewHolder> {
     private List<Appointment> appointmentList;
+    private Context context;
 
     public interface OnAppointmentActionListener {
         void onEdit(Appointment appointment);
@@ -35,6 +37,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     @NonNull
     @Override
     public AppointmentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        this.context = parent.getContext();
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_appointment, parent, false);
         return new AppointmentViewHolder(view);
@@ -57,54 +60,107 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         holder.btnConfirm.setOnClickListener(v -> actionListener.onConfirm(appointment));
         holder.btnCancel.setOnClickListener(v -> actionListener.onCancel(appointment));
 
-        // Show/hide buttons based on appointment status
+        // Show/hide buttons based on appointment status and user type
         updateButtonVisibility(holder, appointment);
     }
 
     private void updateButtonVisibility(AppointmentViewHolder holder, Appointment appointment) {
         String status = appointment.getStatus();
 
+        // Get current user type
+        String currentUserType = LoginActivity.getCurrentUserType(context);
+        boolean isPatient = "Patient".equals(currentUserType);
+
+        // Log for debugging
+        android.util.Log.d("AppointmentAdapter", "UserType: " + currentUserType + ", Status: " + status);
+
         if ("Pending".equalsIgnoreCase(status)) {
-            // Pending: Show Confirm, Cancel, Edit
-            holder.btnConfirm.setVisibility(View.VISIBLE);
-            holder.btnCancel.setVisibility(View.VISIBLE);
-            holder.btnEdit.setVisibility(View.VISIBLE);
-            holder.btnDelete.setVisibility(View.GONE);
+            // Pending: Show different buttons based on user type
+            if (isPatient) {
+                // Patient can only Edit and Cancel their pending appointments
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.VISIBLE);
+                holder.btnEdit.setVisibility(View.VISIBLE);
+                holder.btnDelete.setVisibility(View.GONE);
+            } else {
+                // MedicalExpert/Admin can Confirm, Cancel, Edit
+                holder.btnConfirm.setVisibility(View.VISIBLE);
+                holder.btnCancel.setVisibility(View.VISIBLE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.GONE);
+            }
 
         } else if ("Confirmed".equalsIgnoreCase(status)) {
-            // Confirmed: Only show Cancel
-            holder.btnConfirm.setVisibility(View.GONE);
-            holder.btnCancel.setVisibility(View.VISIBLE);
-            holder.btnEdit.setVisibility(View.GONE);
-            holder.btnDelete.setVisibility(View.GONE);
+            // Confirmed: Different permissions based on user type
+            if (isPatient) {
+                // Patient can only cancel confirmed appointments
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.VISIBLE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.GONE);
+            } else {
+                // MedicalExpert/Admin can cancel
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.GONE);
+            }
 
         } else if ("Cancelled".equalsIgnoreCase(status)) {
-            // Cancelled: Only show Delete
-            holder.btnConfirm.setVisibility(View.GONE);
-            holder.btnCancel.setVisibility(View.GONE);
-            holder.btnEdit.setVisibility(View.GONE);
-            holder.btnDelete.setVisibility(View.VISIBLE);
+            // Cancelled: Different permissions based on user type
+            if (isPatient) {
+                // Patient can delete their cancelled appointments
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.GONE);
+            } else {
+                // MedicalExpert/Admin can delete
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.VISIBLE);
+            }
 
         } else if ("Deleted".equalsIgnoreCase(status) || "IsDelete".equalsIgnoreCase(status)) {
-            // Deleted/IsDelete: Hide all buttons
+            // Deleted/IsDelete: Hide all buttons for everyone
             holder.btnConfirm.setVisibility(View.GONE);
             holder.btnCancel.setVisibility(View.GONE);
             holder.btnEdit.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.GONE);
 
-        }else if ("Completed".equalsIgnoreCase(status)) {
-            // Deleted/IsDelete: Hide all buttons
+        } else if ("Completed".equalsIgnoreCase(status)) {
+            // Completed: Hide all buttons for everyone
             holder.btnConfirm.setVisibility(View.GONE);
             holder.btnCancel.setVisibility(View.GONE);
             holder.btnEdit.setVisibility(View.GONE);
             holder.btnDelete.setVisibility(View.GONE);
 
         } else {
-            // Default/Unknown status: Only show Delete
-            holder.btnConfirm.setVisibility(View.GONE);
-            holder.btnCancel.setVisibility(View.GONE);
-            holder.btnEdit.setVisibility(View.GONE);
-            holder.btnDelete.setVisibility(View.VISIBLE);
+            // Default/Unknown status: Show delete based on user type
+            if (isPatient) {
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.VISIBLE);
+            } else {
+                holder.btnConfirm.setVisibility(View.GONE);
+                holder.btnCancel.setVisibility(View.GONE);
+                holder.btnEdit.setVisibility(View.GONE);
+                holder.btnDelete.setVisibility(View.VISIBLE);
+            }
+        }
+
+        // Update button text based on user type for better UX
+        if (isPatient) {
+            holder.btnCancel.setText("Hủy lịch");
+            holder.btnEdit.setText("Sửa");
+            holder.btnDelete.setText("Xóa");
+        } else {
+            holder.btnConfirm.setText("Xác nhận");
+            holder.btnCancel.setText("Từ chối");
+            holder.btnEdit.setText("Chỉnh sửa");
+            holder.btnDelete.setText("Xóa");
         }
     }
 
