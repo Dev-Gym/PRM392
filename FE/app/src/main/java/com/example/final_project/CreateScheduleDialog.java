@@ -26,7 +26,7 @@ public class CreateScheduleDialog extends Dialog {
     private static final String TAG = "CreateScheduleDialog";
 
     // UI Components
-    private EditText edtExpertId, edtHour;
+    private EditText edtExpertId;
     private TextView tvSelectedDate, tvStartTime, tvEndTime;
     private CheckBox cbIsActive;
     private Button btnSelectDate, btnSelectStartTime, btnSelectEndTime, btnCreate, btnCancel;
@@ -36,14 +36,26 @@ public class CreateScheduleDialog extends Dialog {
     private String startTime = "";
     private String endTime = "";
     private CreateScheduleCallback callback;
+    private Schedule scheduleToEdit = null;
+    private boolean isEditMode = false;
 
     public interface CreateScheduleCallback {
         void onScheduleCreated(boolean success);
     }
 
+    // Constructor for create mode
     public CreateScheduleDialog(Context context, CreateScheduleCallback callback) {
         super(context);
         this.callback = callback;
+        this.isEditMode = false;
+    }
+
+    // Constructor for edit mode
+    public CreateScheduleDialog(Context context, CreateScheduleCallback callback, Schedule scheduleToEdit) {
+        super(context);
+        this.callback = callback;
+        this.scheduleToEdit = scheduleToEdit;
+        this.isEditMode = true;
     }
 
     @Override
@@ -60,6 +72,11 @@ public class CreateScheduleDialog extends Dialog {
 
         initViews();
         setupClickListeners();
+
+        // If edit mode, populate data
+        if (isEditMode && scheduleToEdit != null) {
+            populateEditData();
+        }
     }
 
     private void initViews() {
@@ -67,7 +84,6 @@ public class CreateScheduleDialog extends Dialog {
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         tvStartTime = findViewById(R.id.tvStartTime);
         tvEndTime = findViewById(R.id.tvEndTime);
-        edtHour = findViewById(R.id.edtHour);
         cbIsActive = findViewById(R.id.cbIsActive);
         btnSelectDate = findViewById(R.id.btnSelectDate);
         btnSelectStartTime = findViewById(R.id.btnSelectStartTime);
@@ -76,16 +92,81 @@ public class CreateScheduleDialog extends Dialog {
         btnCancel = findViewById(R.id.btnCancel);
 
         // Set default values
-        edtExpertId.setText("3"); // Default expert ID
-        cbIsActive.setChecked(true); // Default to active
+        edtExpertId.setText("3");
+        cbIsActive.setChecked(true);
+
+        // Update UI based on mode
+        TextView tvTitle = findViewById(R.id.tvDialogTitle);
+        if (isEditMode) {
+            tvTitle.setText("Sửa Lịch Làm Việc");
+            btnCreate.setText("Cập Nhật");
+        } else {
+            tvTitle.setText("Tạo Lịch Làm Việc Mới");
+            btnCreate.setText("Tạo Lịch");
+        }
     }
 
     private void setupClickListeners() {
         btnSelectDate.setOnClickListener(v -> showDatePickerDialog());
         btnSelectStartTime.setOnClickListener(v -> showTimePickerDialog(true));
         btnSelectEndTime.setOnClickListener(v -> showTimePickerDialog(false));
-        btnCreate.setOnClickListener(v -> createSchedule());
+        btnCreate.setOnClickListener(v -> {
+            if (isEditMode) {
+                updateSchedule();
+            } else {
+                createSchedule();
+            }
+        });
         btnCancel.setOnClickListener(v -> dismiss());
+    }
+
+    private void populateEditData() {
+        if (scheduleToEdit == null) return;
+
+        Log.d(TAG, "Populating edit data for schedule: " + scheduleToEdit.getScheduleId());
+
+        // Set Expert ID
+        edtExpertId.setText(String.valueOf(scheduleToEdit.getExpertId()));
+
+        // Set Active status
+        cbIsActive.setChecked(scheduleToEdit.isActive());
+
+        // Extract date and times from startDate and endDate
+        if (scheduleToEdit.getStartDate() != null && scheduleToEdit.getEndDate() != null) {
+            try {
+                String startDateTime = scheduleToEdit.getStartDate();
+                String endDateTime = scheduleToEdit.getEndDate();
+
+                // Extract date part
+                if (startDateTime.contains("T")) {
+                    selectedDate = startDateTime.split("T")[0];
+                    tvSelectedDate.setText("Ngày đã chọn: " + selectedDate);
+                    btnSelectDate.setText("Đổi ngày");
+                }
+
+                // Extract start time
+                if (startDateTime.contains("T")) {
+                    String timeWithSeconds = startDateTime.split("T")[1];
+                    startTime = timeWithSeconds.substring(0, 5);
+                    tvStartTime.setText("Giờ bắt đầu: " + startTime);
+                    btnSelectStartTime.setText("Đổi giờ bắt đầu");
+                }
+
+                // Extract end time
+                if (endDateTime.contains("T")) {
+                    String timeWithSeconds = endDateTime.split("T")[1];
+                    endTime = timeWithSeconds.substring(0, 5);
+                    tvEndTime.setText("Giờ kết thúc: " + endTime);
+                    btnSelectEndTime.setText("Đổi giờ kết thúc");
+                }
+
+                Log.d(TAG, "Populated - Date: " + selectedDate + ", Start: " + startTime + ", End: " + endTime);
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error parsing schedule dates", e);
+                Toast.makeText(getContext(), "Lỗi đọc dữ liệu lịch", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void showDatePickerDialog() {
@@ -96,8 +177,7 @@ public class CreateScheduleDialog extends Dialog {
 
         android.app.DatePickerDialog datePickerDialog = new android.app.DatePickerDialog(
                 getContext(),
-                (android.widget.DatePicker view, int selectedYear, int selectedMonth, int selectedDay) -> {
-                    // Format: yyyy-MM-dd
+                (view, selectedYear, selectedMonth, selectedDay) -> {
                     selectedDate = String.format(Locale.getDefault(), "%d-%02d-%02d",
                             selectedYear, selectedMonth + 1, selectedDay);
 
@@ -106,12 +186,9 @@ public class CreateScheduleDialog extends Dialog {
 
                     Log.d(TAG, "Selected date: " + selectedDate);
                 },
-                year,
-                month,
-                day
+                year, month, day
         );
 
-        // Set minimum date to today
         datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
         datePickerDialog.setTitle("Chọn ngày làm việc");
         datePickerDialog.show();
@@ -139,9 +216,7 @@ public class CreateScheduleDialog extends Dialog {
 
                     Log.d(TAG, (isStartTime ? "Start" : "End") + " time selected: " + time);
                 },
-                hour,
-                minute,
-                true // 24 hour format
+                hour, minute, true
         );
 
         timePickerDialog.setTitle(isStartTime ? "Chọn giờ bắt đầu" : "Chọn giờ kết thúc");
@@ -149,22 +224,16 @@ public class CreateScheduleDialog extends Dialog {
     }
 
     private void createSchedule() {
-        if (!validateForm()) {
-            return;
-        }
+        if (!validateForm()) return;
 
         try {
             int expertId = Integer.parseInt(edtExpertId.getText().toString().trim());
             boolean isActive = cbIsActive.isChecked();
 
-            // Create datetime strings using selected date and times
             String startDateTime = selectedDate + "T" + startTime + ":00.000Z";
             String endDateTime = selectedDate + "T" + endTime + ":00.000Z";
-
-            // Convert selected date to day of week for API
             String dayOfWeek = getDayOfWeekFromDate(selectedDate);
 
-            // Create ScheduleRequest
             ScheduleRequest request = new ScheduleRequest();
             request.setExpertId(expertId);
             request.setDayOfWeek(dayOfWeek);
@@ -172,21 +241,38 @@ public class CreateScheduleDialog extends Dialog {
             request.setEndDate(endDateTime);
             request.setActive(isActive);
 
-            Log.d(TAG, "Creating schedule:");
-            Log.d(TAG, "- Selected Date: " + selectedDate);
-            Log.d(TAG, "- Day of Week: " + dayOfWeek);
-            Log.d(TAG, "- Start Time: " + startTime);
-            Log.d(TAG, "- End Time: " + endTime);
-            Log.d(TAG, "- Start DateTime: " + startDateTime);
-            Log.d(TAG, "- End DateTime: " + endDateTime);
-            Log.d(TAG, "- ExpertId: " + request.getExpertId());
-
+            Log.d(TAG, "Creating schedule: " + request.toString());
             createScheduleWithRequest(request);
 
-        } catch (NumberFormatException e) {
-            Toast.makeText(getContext(), "Expert ID phải là số", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Log.e(TAG, "Error creating schedule", e);
+            Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateSchedule() {
+        if (!validateForm()) return;
+
+        try {
+            int expertId = Integer.parseInt(edtExpertId.getText().toString().trim());
+            boolean isActive = cbIsActive.isChecked();
+
+            String startDateTime = selectedDate + "T" + startTime + ":00.000Z";
+            String endDateTime = selectedDate + "T" + endTime + ":00.000Z";
+            String dayOfWeek = getDayOfWeekFromDate(selectedDate);
+
+            ScheduleRequest request = new ScheduleRequest();
+            request.setExpertId(expertId);
+            request.setDayOfWeek(dayOfWeek);
+            request.setStartDate(startDateTime);
+            request.setEndDate(endDateTime);
+            request.setActive(isActive);
+
+            Log.d(TAG, "Updating schedule ID: " + scheduleToEdit.getScheduleId());
+            updateScheduleWithRequest(scheduleToEdit.getScheduleId(), request);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating schedule", e);
             Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
@@ -195,7 +281,6 @@ public class CreateScheduleDialog extends Dialog {
         String expertIdText = edtExpertId.getText().toString().trim();
         if (expertIdText.isEmpty()) {
             Toast.makeText(getContext(), "Vui lòng nhập Expert ID", Toast.LENGTH_SHORT).show();
-            edtExpertId.requestFocus();
             return false;
         }
 
@@ -203,7 +288,6 @@ public class CreateScheduleDialog extends Dialog {
             Integer.parseInt(expertIdText);
         } catch (NumberFormatException e) {
             Toast.makeText(getContext(), "Expert ID phải là số", Toast.LENGTH_SHORT).show();
-            edtExpertId.requestFocus();
             return false;
         }
 
@@ -222,7 +306,6 @@ public class CreateScheduleDialog extends Dialog {
             return false;
         }
 
-        // Validate that end time is after start time
         if (!isEndTimeAfterStartTime()) {
             Toast.makeText(getContext(), "Giờ kết thúc phải sau giờ bắt đầu", Toast.LENGTH_SHORT).show();
             return false;
@@ -246,12 +329,10 @@ public class CreateScheduleDialog extends Dialog {
 
             return endTotalMinutes > startTotalMinutes;
         } catch (Exception e) {
-            Log.e(TAG, "Error comparing times", e);
             return false;
         }
     }
 
-    // Helper method to convert date to day of week
     private String getDayOfWeekFromDate(String dateString) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -272,33 +353,21 @@ public class CreateScheduleDialog extends Dialog {
             }
         } catch (Exception e) {
             Log.e(TAG, "Error parsing date: " + dateString, e);
-            return "Monday"; // Default fallback
+            return "Monday";
         }
     }
 
     private void createScheduleWithRequest(ScheduleRequest request) {
-        Log.d(TAG, "Calling create schedule API with ScheduleRequest");
-        Log.d(TAG, "Request: " + request.toString());
-
         ApiService apiService = RetrofitClient.getInstance();
         apiService.createScheduleWithRequest(request).enqueue(new Callback<Schedule>() {
             @Override
             public void onResponse(Call<Schedule> call, Response<Schedule> response) {
-                Log.d(TAG, "Create schedule response code: " + response.code());
                 if (response.isSuccessful()) {
-                    Log.d(TAG, "Schedule created successfully");
                     Toast.makeText(getContext(), "Tạo lịch thành công!", Toast.LENGTH_SHORT).show();
                     callback.onScheduleCreated(true);
                     dismiss();
                 } else {
-                    Log.e(TAG, "Create schedule failed: " + response.code());
-                    if (response.errorBody() != null) {
-                        try {
-                            Log.e(TAG, "Error body: " + response.errorBody().string());
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error reading error body", e);
-                        }
-                    }
+                    Log.e(TAG, "Create failed: " + response.code());
                     Toast.makeText(getContext(), "Lỗi tạo lịch: " + response.code(), Toast.LENGTH_SHORT).show();
                     callback.onScheduleCreated(false);
                 }
@@ -306,9 +375,34 @@ public class CreateScheduleDialog extends Dialog {
 
             @Override
             public void onFailure(Call<Schedule> call, Throwable t) {
-                Log.e(TAG, "Create schedule network error", t);
-                callback.onScheduleCreated(false);
+                Log.e(TAG, "Create error", t);
                 Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                callback.onScheduleCreated(false);
+            }
+        });
+    }
+
+    private void updateScheduleWithRequest(int scheduleId, ScheduleRequest request) {
+        ApiService apiService = RetrofitClient.getInstance();
+        apiService.updateScheduleWithRequest(scheduleId, request).enqueue(new Callback<Schedule>() {
+            @Override
+            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "Cập nhật lịch thành công!", Toast.LENGTH_SHORT).show();
+                    callback.onScheduleCreated(true);
+                    dismiss();
+                } else {
+                    Log.e(TAG, "Update failed: " + response.code());
+                    Toast.makeText(getContext(), "Lỗi cập nhật: " + response.code(), Toast.LENGTH_SHORT).show();
+                    callback.onScheduleCreated(false);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Schedule> call, Throwable t) {
+                Log.e(TAG, "Update error", t);
+                Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                callback.onScheduleCreated(false);
             }
         });
     }

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.model.Schedule;
+import com.example.final_project.model.ScheduleRequest;
 import com.example.final_project.network.ApiService;
 import com.example.final_project.network.RetrofitClient;
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ public class ScheduleActivity extends AppCompatActivity {
         rvSchedules = findViewById(R.id.rvSchedules);
         btnAddSchedule = findViewById(R.id.btnAddSchedule);
         btnEditSchedule = findViewById(R.id.btnEditSchedule);
-        btnDeleteSchedule = findViewById(R.id.btnDeleteSchedule); // New delete button
+        btnDeleteSchedule = findViewById(R.id.btnDeleteSchedule);
     }
 
     private void setupRecyclerView() {
@@ -67,8 +68,6 @@ public class ScheduleActivity extends AppCompatActivity {
             public void onScheduleLongClick(Schedule schedule, int position) {
                 selectedSchedule = schedule;
                 scheduleAdapter.setSelectedPosition(position);
-
-                // Show options dialog on long click
                 showScheduleOptionsDialog(schedule);
             }
         });
@@ -81,7 +80,6 @@ public class ScheduleActivity extends AppCompatActivity {
         btnAddSchedule.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Show create schedule dialog - sử dụng ScheduleRequest DTO
                 showCreateScheduleDialog();
             }
         });
@@ -90,10 +88,7 @@ public class ScheduleActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (selectedSchedule != null) {
-                    // TODO: Implement edit dialog
-                    Toast.makeText(ScheduleActivity.this,
-                            "Sửa lịch ID: " + selectedSchedule.getScheduleId(),
-                            Toast.LENGTH_SHORT).show();
+                    showEditScheduleDialog(selectedSchedule);
                 } else {
                     Toast.makeText(ScheduleActivity.this,
                             "Vui lòng chọn một lịch để sửa",
@@ -121,7 +116,6 @@ public class ScheduleActivity extends AppCompatActivity {
         btnEditSchedule.setEnabled(hasSelection);
         btnDeleteSchedule.setEnabled(hasSelection);
 
-        // Change button appearance
         btnEditSchedule.setAlpha(hasSelection ? 1.0f : 0.5f);
         btnDeleteSchedule.setAlpha(hasSelection ? 1.0f : 0.5f);
     }
@@ -134,8 +128,7 @@ public class ScheduleActivity extends AppCompatActivity {
                 "\nTrạng thái: " + (schedule.isActive() ? "Hoạt động" : "Không hoạt động"));
 
         builder.setPositiveButton("Sửa", (dialog, which) -> {
-            // TODO: Implement edit functionality
-            Toast.makeText(this, "Chức năng sửa đang phát triển", Toast.LENGTH_SHORT).show();
+            showEditScheduleDialog(schedule);
         });
 
         builder.setNegativeButton("Xóa", (dialog, which) -> {
@@ -187,6 +180,22 @@ public class ScheduleActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    // NEW METHOD: Show edit dialog using CreateScheduleDialog
+    private void showEditScheduleDialog(Schedule schedule) {
+        CreateScheduleDialog dialog = new CreateScheduleDialog(this,
+                new CreateScheduleDialog.CreateScheduleCallback() {
+                    @Override
+                    public void onScheduleCreated(boolean success) {
+                        if (success) {
+                            Log.d(TAG, "Schedule updated successfully, refreshing list");
+                            getSchedules(); // Refresh the list
+                            clearSelection(); // Clear selection after refresh
+                        }
+                    }
+                }, schedule); // Pass Schedule object for edit mode
+        dialog.show();
+    }
+
     private void clearSelection() {
         selectedSchedule = null;
         scheduleAdapter.setSelectedPosition(-1);
@@ -197,7 +206,6 @@ public class ScheduleActivity extends AppCompatActivity {
         ApiService apiService = RetrofitClient.getInstance();
         Log.d(TAG, "Loading all schedules...");
 
-        // Call API without expertId parameter to get all schedules
         apiService.getSchedules().enqueue(new Callback<List<Schedule>>() {
             @Override
             public void onResponse(Call<List<Schedule>> call, Response<List<Schedule>> response) {
@@ -207,7 +215,7 @@ public class ScheduleActivity extends AppCompatActivity {
                     scheduleList.clear();
                     scheduleList.addAll(response.body());
                     scheduleAdapter.notifyDataSetChanged();
-                    clearSelection(); // Clear selection when data refreshes
+                    clearSelection();
 
                     Log.d(TAG, "Loaded " + scheduleList.size() + " schedules");
                     Toast.makeText(ScheduleActivity.this,
@@ -249,34 +257,6 @@ public class ScheduleActivity extends AppCompatActivity {
         });
     }
 
-    private void updateSchedule(int id, Schedule updatedSchedule) {
-        ApiService apiService = RetrofitClient.getInstance();
-        apiService.updateSchedule(id, updatedSchedule).enqueue(new Callback<Schedule>() {
-            @Override
-            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    for (int i = 0; i < scheduleList.size(); i++) {
-                        if (scheduleList.get(i).getScheduleId() == id) {
-                            scheduleList.set(i, response.body());
-                            break;
-                        }
-                    }
-                    scheduleAdapter.notifyDataSetChanged();
-                    Toast.makeText(ScheduleActivity.this, "Cập nhật lịch thành công!", Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.e(TAG, "Update schedule failed: " + response.code());
-                    Toast.makeText(ScheduleActivity.this, "Lỗi cập nhật lịch: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Schedule> call, Throwable t) {
-                Log.e(TAG, "Update schedule error: " + t.getMessage());
-                Toast.makeText(ScheduleActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void deleteSchedule(int id) {
         ApiService apiService = RetrofitClient.getInstance();
         apiService.deleteSchedule(id).enqueue(new Callback<Void>() {
@@ -291,7 +271,7 @@ public class ScheduleActivity extends AppCompatActivity {
                         }
                     }
                     scheduleAdapter.notifyDataSetChanged();
-                    clearSelection(); // Clear selection after delete
+                    clearSelection();
                     Toast.makeText(ScheduleActivity.this, "Xóa lịch thành công!", Toast.LENGTH_SHORT).show();
                 } else {
                     Log.e(TAG, "Delete schedule failed: " + response.code());
