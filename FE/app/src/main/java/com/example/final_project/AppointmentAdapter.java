@@ -54,6 +54,16 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         holder.tvDate.setText(appointment.getStartDate());
         holder.tvStatus.setText("Status: " + appointment.getStatus());
 
+        // Handle Note display - NEW CODE
+        String note = appointment.getNote();
+        if (note != null && !note.trim().isEmpty()) {
+            holder.tvNote.setText("Ghi chú: " + note);
+            holder.tvNote.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvNote.setText("Ghi chú: Không có");
+            holder.tvNote.setVisibility(View.GONE); // Hide if no note
+        }
+
         // Set click listeners for all buttons
         holder.btnEdit.setOnClickListener(v -> actionListener.onEdit(appointment));
         holder.btnDelete.setOnClickListener(v -> actionListener.onDelete(appointment));
@@ -170,7 +180,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     }
 
     static class AppointmentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus;
+        TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus, tvNote; // Added tvNote
         Button btnEdit, btnDelete, btnConfirm, btnCancel;
 
         AppointmentViewHolder(@NonNull View itemView) {
@@ -180,6 +190,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             tvExpertId = itemView.findViewById(R.id.tvExpertId);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvStatus = itemView.findViewById(R.id.tvStatus);
+            tvNote = itemView.findViewById(R.id.tvNote); // NEW - Add this line
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnDelete = itemView.findViewById(R.id.btnDelete);
             btnConfirm = itemView.findViewById(R.id.btnConfirm);
