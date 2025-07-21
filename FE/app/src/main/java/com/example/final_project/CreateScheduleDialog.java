@@ -112,6 +112,21 @@ public class CreateScheduleDialog extends Dialog {
         if (isEditMode) {
             tvTitle.setText("Sửa Lịch Làm Việc");
             btnCreate.setText("Cập Nhật");
+
+            // Disable Expert ID editing in edit mode
+            edtExpertId.setEnabled(false);
+            edtExpertId.setAlpha(0.6f);
+
+            // Disable date selection in edit mode
+            btnSelectDate.setEnabled(false);
+            btnSelectDate.setAlpha(0.6f);
+            btnSelectDate.setText("Ngày không thể thay đổi");
+
+            // Disable active status changing in edit mode
+            cbIsActive.setEnabled(false);
+            cbIsActive.setAlpha(0.6f);
+
+            Log.d(TAG, "Edit mode: Disabled Expert ID, Date selection, and Active status");
         } else {
             tvTitle.setText("Tạo Lịch Làm Việc Mới");
             btnCreate.setText("Tạo Lịch");
@@ -119,9 +134,16 @@ public class CreateScheduleDialog extends Dialog {
     }
 
     private void setupClickListeners() {
-        btnSelectDate.setOnClickListener(v -> showDatePickerDialog());
+        btnSelectDate.setOnClickListener(v -> {
+            // Only allow date selection in create mode
+            if (!isEditMode) {
+                showDatePickerDialog();
+            }
+        });
+
         btnSelectStartTime.setOnClickListener(v -> showTimePickerDialog(true));
         btnSelectEndTime.setOnClickListener(v -> showTimePickerDialog(false));
+
         btnCreate.setOnClickListener(v -> {
             if (isEditMode) {
                 updateSchedule();
@@ -129,6 +151,7 @@ public class CreateScheduleDialog extends Dialog {
                 createSchedule();
             }
         });
+
         btnCancel.setOnClickListener(v -> dismiss());
     }
 

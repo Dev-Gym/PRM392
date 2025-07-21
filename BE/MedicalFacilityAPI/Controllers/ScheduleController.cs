@@ -21,7 +21,7 @@ namespace MedicalFacilityAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<MedicalExpertSchedule>> GetAll([FromQuery]int expertId)
         {
-            var item  = _mediicalExpertScheduleService.GetSchedulesByExpertId(expertId);
+            var item  = _mediicalExpertScheduleService.GetSchedulesByExpertId(expertId).Where(x=>x.IsActive==true);
            return Ok(item);
         }
 
