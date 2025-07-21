@@ -27,7 +27,8 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnDoctors = findViewById(R.id.btnDoctors);
         Button btnHistory = findViewById(R.id.btnHistory);
-        Button btnSchedule = findViewById(R.id.btnSchedule); // ADD THIS LINE
+        Button btnSchedule = findViewById(R.id.btnSchedule);
+        Button btnAllSchedules = findViewById(R.id.btnAllSchedules); // NEW BUTTON
 
         btnDoctors.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MedicalExpertActivity.class);
@@ -41,9 +42,16 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // ADD CLICK LISTENER FOR MEDICAL HISTORY
+        // Medical History button
         btnSchedule.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MedicalHistoryActivity.class);
+            startActivity(intent);
+        });
+
+        // NEW: All Schedules button
+        btnAllSchedules.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ScheduleActivity.class);
+            intent.putExtra("token", "Bearer test-token");
             startActivity(intent);
         });
 

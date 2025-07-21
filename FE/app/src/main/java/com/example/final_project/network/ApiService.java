@@ -80,7 +80,7 @@ public interface ApiService {
     Call<List<Schedule>> getSchedules();
 
     @POST("api/Schedule")
-    Call<Schedule> createSchedule(@Body Schedule schedule);
+    Call<Schedule> createScheduleWithRequest(@Body ScheduleRequest request);
 
     @PUT("api/Schedule/{id}")
     Call<Schedule> updateSchedule(@Path("id") int id, @Body Schedule schedule);
