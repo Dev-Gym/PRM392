@@ -184,7 +184,6 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
 
         TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus, tvNote; // Added tvNote
 
-        TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus;
 
         Button btnEdit, btnDelete, btnConfirm, btnCancel;
 
