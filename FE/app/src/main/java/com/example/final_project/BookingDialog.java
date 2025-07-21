@@ -46,6 +46,10 @@ public class BookingDialog extends Dialog {
     private Button btnBook, btnCancel;
     private TextView tvDialogTitle;
 
+
+    // NEW: Add unavailable appointments UI components
+    private TextView tvUnavailableAppointments; // TextView để hiển thị appointment đã confirmed
+
     // Data
     private List<ExpertSchedule> availableSchedules = new ArrayList<>();
     private List<Facility> availableFacilities = new ArrayList<>();
@@ -54,6 +58,10 @@ public class BookingDialog extends Dialog {
     private ExpertSchedule selectedSchedule = null;
     private Facility selectedFacility = null;
     private Schedule selectedScheduleDetail = null;
+
+    // NEW: Add unavailable appointments data
+    private List<Appointment> unavailableAppointments = new ArrayList<>();
+
 
     public interface BookingCallback {
         void onBookingResult(boolean success);
@@ -92,6 +100,11 @@ public class BookingDialog extends Dialog {
         setupClickListeners();
         setupHourValidation();
 
+
+        // NEW: Load unavailable appointments
+        loadUnavailableAppointments(); // Load appointment đã confirmed
+
+
         // Populate appointment data if editing
         if (appointmentToEdit != null) {
             populateAppointmentData(appointmentToEdit);
@@ -111,8 +124,107 @@ public class BookingDialog extends Dialog {
         btnBook = findViewById(R.id.btnBook);
         btnCancel = findViewById(R.id.btnCancel);
 
+
+        // NEW: Initialize unavailable appointments TextView
+        tvUnavailableAppointments = findViewById(R.id.tvUnavailableAppointments);
+
         Log.d(TAG, "All views initialized successfully");
     }
+
+    // NEW: Method to load unavailable appointments
+    private void loadUnavailableAppointments() {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading unavailable appointments for expertId: " + doctorId);
+
+        apiService.getUnavailableAppointments(doctorId).enqueue(new Callback<List<Appointment>>() {
+            @Override
+            public void onResponse(Call<List<Appointment>> call, Response<List<Appointment>> response) {
+                Log.d(TAG, "Unavailable appointments API response code: " + response.code());
+
+                if (response.isSuccessful() && response.body() != null) {
+                    unavailableAppointments.clear();
+                    unavailableAppointments.addAll(response.body());
+
+                    Log.d(TAG, "Loaded " + unavailableAppointments.size() + " unavailable appointments");
+
+                    // Display unavailable appointments
+                    displayUnavailableAppointments();
+
+                } else {
+                    Log.e(TAG, "Failed to load unavailable appointments. Response code: " + response.code());
+                    tvUnavailableAppointments.setText("Lỗi tải lịch đã đặt");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Appointment>> call, Throwable t) {
+                Log.e(TAG, "Error loading unavailable appointments", t);
+                tvUnavailableAppointments.setText("Lỗi kết nối khi tải lịch đã đặt");
+            }
+        });
+    }
+
+    // NEW: Method to display unavailable appointments
+    private void displayUnavailableAppointments() {
+        if (unavailableAppointments.isEmpty()) {
+            tvUnavailableAppointments.setText("Không có lịch hẹn nào đã được xác nhận");
+            tvUnavailableAppointments.setTextColor(0xFF4CAF50); // Green color
+            return;
+        }
+
+        StringBuilder displayText = new StringBuilder();
+        displayText.append("Lịch đã xác nhận (").append(unavailableAppointments.size()).append(" lịch hẹn):\n");
+
+        for (int i = 0; i < unavailableAppointments.size(); i++) {
+            Appointment appointment = unavailableAppointments.get(i);
+
+            // Extract date and time from startDate and endDate
+            String displayDateTime = formatAppointmentDateTime(appointment.getStartDate(), appointment.getEndDate());
+
+            displayText.append("• ").append(displayDateTime);
+
+            // Add line break except for last item
+            if (i < unavailableAppointments.size() - 1) {
+                displayText.append("\n");
+            }
+        }
+
+        tvUnavailableAppointments.setText(displayText.toString());
+        tvUnavailableAppointments.setTextColor(0xFFF44336); // Red color to indicate unavailable times
+
+        Log.d(TAG, "Displayed " + unavailableAppointments.size() + " unavailable appointments");
+    }
+
+    // NEW: Helper method to format appointment datetime
+    private String formatAppointmentDateTime(String startDate, String endDate) {
+        try {
+            if (startDate != null && endDate != null) {
+                // Parse startDate: "2025-04-01T09:00:00"
+                String[] startParts = startDate.split("T");
+                String[] endParts = endDate.split("T");
+
+                if (startParts.length > 1 && endParts.length > 1) {
+                    String date = startParts[0]; // "2025-04-01"
+                    String startTime = startParts[1].substring(0, 5); // "09:00"
+                    String endTime = endParts[1].substring(0, 5); // "10:00"
+
+                    // Convert date format from "2025-04-01" to "01/04/2025"
+                    String[] dateParts = date.split("-");
+                    if (dateParts.length == 3) {
+                        String formattedDate = dateParts[2] + "/" + dateParts[1] + "/" + dateParts[0];
+                        return formattedDate + " từ " + startTime + " - " + endTime;
+                    }
+
+                    return date + " từ " + startTime + " - " + endTime;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error formatting appointment datetime", e);
+        }
+
+        return "Thời gian không xác định";
+    }
+
 
     // ADD METHOD TO POPULATE APPOINTMENT DATA WHEN EDITING
     private void populateAppointmentData(Appointment appointment) {
@@ -641,29 +753,55 @@ public class BookingDialog extends Dialog {
             String appointmentDate;
             String appointmentHour = edtHour.getText().toString().trim();
 
-            if (!appointmentHour.contains(":")) {
-                appointmentHour += ":00";
+            Log.d(TAG, "Original hour input: " + appointmentHour);
+
+            // FIX: Format time properly with leading zeros
+            String formattedTime;
+            if (appointmentHour.contains(":")) {
+                String[] timeParts = appointmentHour.split(":");
+                int hour = Integer.parseInt(timeParts[0]);
+                int minute = timeParts.length > 1 ? Integer.parseInt(timeParts[1]) : 0;
+
+                // Format with leading zeros: 9:00 → 09:00
+                formattedTime = String.format("%02d:%02d", hour, minute);
+            } else {
+                // If only hour provided: 9 → 09:00
+                int hour = Integer.parseInt(appointmentHour);
+                formattedTime = String.format("%02d:00", hour);
             }
 
+            Log.d(TAG, "Formatted time: " + formattedTime);
+
+            // Calculate appointment date
             if (appointmentToEdit != null) {
-                // For UPDATE: use existing appointment date or calculate from selected schedule
                 if (selectedSchedule != null) {
                     appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
                 } else {
-                    // Extract date from existing appointment startDate
                     String existingStartDate = appointmentToEdit.getStartDate();
-                    appointmentDate = existingStartDate.split("T")[0]; // Get date part only
+                    appointmentDate = existingStartDate.split("T")[0];
                 }
             } else {
-                // For CREATE: calculate from selected schedule
+                if (selectedSchedule == null) {
+                    Toast.makeText(getContext(), "Lỗi: Chưa chọn lịch làm việc", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 appointmentDate = getNextDateForDayOfWeek(selectedSchedule.getDayOfWeek());
             }
 
-            String startDateTime = appointmentDate + "T" + appointmentHour + ":00.000Z";
-            String endDateTime = appointmentDate + "T" + appointmentHour + ":00.000Z";
+            // FIX: Create proper ISO datetime without .000Z suffix
+            String startDateTime = appointmentDate + "T" + formattedTime + ":00";
+            String endDateTime = appointmentDate + "T" + formattedTime + ":00";
+
+            // Alternative format if server expects different format:
+            // String startDateTime = appointmentDate + "T" + formattedTime + ":00.000Z";
+            // String endDateTime = appointmentDate + "T" + formattedTime + ":00.000Z";
+
+            Log.d(TAG, "Final startDateTime: " + startDateTime);
+            Log.d(TAG, "Final endDateTime: " + endDateTime);
 
             if (appointmentToEdit != null) {
-                // For UPDATE: use Appointment object
+                // UPDATE logic
+
                 Appointment appointment = new Appointment();
                 appointment.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
                 appointment.setExpertId(doctorId);
@@ -672,11 +810,11 @@ public class BookingDialog extends Dialog {
                 appointment.setStartDate(startDateTime);
                 appointment.setEndDate(endDateTime);
 
-                Log.d(TAG, "Updating appointment with ID: " + appointmentToEdit.getAppointmentId());
-                Log.d(TAG, "New startDate: " + startDateTime);
+
                 updateAppointment(appointment);
             } else {
-                // For CREATE: use AppointmentCreateRequest
+                // CREATE logic
+
                 AppointmentCreateRequest request = new AppointmentCreateRequest();
                 request.setScheduleId(selectedSchedule.getScheduleId());
                 request.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
@@ -686,21 +824,17 @@ public class BookingDialog extends Dialog {
                 request.setStartDate(startDateTime);
                 request.setEndDate(endDateTime);
 
-                Log.d(TAG, "Creating appointment:");
-                Log.d(TAG, "- Date: " + appointmentDate);
-                Log.d(TAG, "- Hour: " + appointmentHour);
-                Log.d(TAG, "- DateTime: " + startDateTime);
-                Log.d(TAG, "- ScheduleId: " + request.getScheduleId());
-                Log.d(TAG, "- PatientId: " + request.getPatientId());
-                Log.d(TAG, "- ExpertId: " + request.getExpertId());
-                Log.d(TAG, "- FacilityId: " + request.getFacilityId());
+
+                Log.d(TAG, "Request object: " + request.toString());
 
                 createAppointment(request);
             }
 
         } catch (NumberFormatException e) {
-            Toast.makeText(getContext(), "Vui lòng nhập số hợp lệ", Toast.LENGTH_SHORT).show();
+
             Log.e(TAG, "Number format error", e);
+            Toast.makeText(getContext(), "Lỗi định dạng số", Toast.LENGTH_SHORT).show();
+
         } catch (Exception e) {
             Log.e(TAG, "Error creating appointment", e);
             Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();

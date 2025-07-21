@@ -23,9 +23,15 @@ namespace MedicaiFacility.Service
             return _repository.GetSchedulesByExpertId(expertId).ToList();
         }
 
-        public MedicalExpertSchedule AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
+
+        public string AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
         {
-            return _repository.AddMedicalExpertSchedule(schedule);
+            var exsitingSchedule = _repository.GetAll().Where(x => x.IsActive==true && x.ExpertId == schedule.ExpertId && x.StartDate.Date == schedule.StartDate.Date);
+            if (exsitingSchedule.Any()) return "đã tồn tại lịch này rồi";
+            var result =  _repository.AddMedicalExpertSchedule(schedule);
+            if (result == null) return "Tạo thất bại";
+            return "Tạo thành công";
+
         }
 
         public void DeleteSchedulesByExpertId(int expertId)

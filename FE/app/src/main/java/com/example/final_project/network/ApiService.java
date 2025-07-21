@@ -58,6 +58,10 @@ public interface ApiService {
     @PUT("api/Appointments/delete/{id}")
     Call<Appointment> deleteAppointment(@Path("id") int id);
 
+    @GET("api/Appointments/unvaliable/{expertId}")
+    Call<List<Appointment>> getUnavailableAppointments(@Path("expertId") int expertId);
+
+
     // Medical Experts
     @GET("api/User/get-all-experts")
     Call<List<User>> getAllExperts();
@@ -80,7 +84,8 @@ public interface ApiService {
     Call<List<Schedule>> getSchedules();
 
     @POST("api/Schedule")
-    Call<Schedule> createScheduleWithRequest(@Body ScheduleRequest request);
+
+    Call<String> createScheduleWithRequest(@Body ScheduleRequest request);
 
     @PUT("api/Schedule/{id}")
     Call<Schedule> updateScheduleWithRequest(@Path("id") int id, @Body ScheduleRequest request);

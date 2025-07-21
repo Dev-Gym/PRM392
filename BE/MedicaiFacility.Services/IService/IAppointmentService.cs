@@ -19,5 +19,8 @@ namespace MedicaiFacility.Service.IService
 		(List<Appointment> list, int totalItems) GetALlPagainationsByExpertId(int pg, int pageSize, int expertId);
 		List<Appointment> GetAllByExpertId(int expertId);
         List<Appointment> GetAllByUserId(int userId);
+
+        void CancelAllAppointmentInTime(int experId, Appointment appointment);
+
     }
 }

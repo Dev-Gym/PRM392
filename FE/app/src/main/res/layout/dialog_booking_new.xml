@@ -50,6 +50,37 @@
             app:layout_constraintStart_toEndOf="@id/lblExpertId"
             app:layout_constraintEnd_toEndOf="parent"/>
 
+        <!-- NEW: Unavailable Appointments Display -->
+        <TextView
+            android:id="@+id/lblUnavailableAppointments"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Lịch hẹn đã xác nhận:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#F44336"
+            app:layout_constraintTop_toBottomOf="@id/tvExpertId"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/tvUnavailableAppointments"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Đang tải lịch đã xác nhận..."
+            android:textSize="12sp"
+            android:textColor="#F44336"
+            android:background="#FFEBEE"
+            android:padding="12dp"
+            android:maxLines="8"
+            android:scrollbars="vertical"
+            app:layout_constraintTop_toBottomOf="@id/lblUnavailableAppointments"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+
         <!-- Patient ID -->
         <TextView
             android:id="@+id/lblPatientId"
@@ -58,7 +89,9 @@
             android:text="Patient ID:"
             android:textSize="14sp"
             android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/tvExpertId"
+
+            app:layout_constraintTop_toBottomOf="@id/tvUnavailableAppointments"
+
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"/>
