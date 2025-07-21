@@ -1,5 +1,6 @@
 package com.example.final_project;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public class MedicalHistoryAdapter extends RecyclerView.Adapter<MedicalHistoryAdapter.MedicalHistoryViewHolder> {
     private List<MedicalHistory> medicalHistoryList;
+    private Context context;
 
     public interface OnMedicalHistoryActionListener {
         void onDelete(MedicalHistory history);
@@ -39,6 +41,7 @@ public class MedicalHistoryAdapter extends RecyclerView.Adapter<MedicalHistoryAd
     @NonNull
     @Override
     public MedicalHistoryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        this.context = parent.getContext();
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_medical_history, parent, false);
         return new MedicalHistoryViewHolder(view);
@@ -70,12 +73,19 @@ public class MedicalHistoryAdapter extends RecyclerView.Adapter<MedicalHistoryAd
             holder.btnCompleted.setOnClickListener(v -> actionListener.onCompleted(history));
         }
 
-        // Show/hide buttons based on status
+        // Show/hide buttons based on status and user type
         updateButtonVisibility(holder, history);
     }
 
     private void updateButtonVisibility(MedicalHistoryViewHolder holder, MedicalHistory history) {
         String status = history.getStatus();
+
+        // Get current user type
+        String currentUserType = LoginActivity.getCurrentUserType(context);
+        boolean isPatient = "Patient".equals(currentUserType);
+
+        // Log for debugging
+        android.util.Log.d("MedicalHistoryAdapter", "UserType: " + currentUserType + ", Status: " + status);
 
         // Hide all buttons first
         holder.btnDelete.setVisibility(View.GONE);
@@ -83,25 +93,52 @@ public class MedicalHistoryAdapter extends RecyclerView.Adapter<MedicalHistoryAd
         holder.btnCompleted.setVisibility(View.GONE);
         holder.btnCancel.setVisibility(View.GONE);
 
-        if ("Completed".equalsIgnoreCase(status)) {
-            // Completed: Show Delete and Cancel
-            holder.btnDelete.setVisibility(View.GONE);
-            holder.btnCancel.setVisibility(View.GONE);
+        if (isPatient) {
+            // PATIENT: Can only view and cancel (very limited actions)
+            if ("Pending".equalsIgnoreCase(status)) {
+                // Patient can only cancel pending medical history
+                holder.btnCancel.setVisibility(View.VISIBLE);
+            } else if ("Processing".equalsIgnoreCase(status)) {
+                // Patient can see processing but can't do anything
+                // All buttons remain GONE
+            } else if ("Completed".equalsIgnoreCase(status)) {
+                // Patient can view completed records
+                // All buttons remain GONE
+            } else if ("Cancelled".equalsIgnoreCase(status)) {
+                // Patient can view cancelled records
+                // All buttons remain GONE
+            }
+            // Patient CANNOT use: btnProcessing, btnCompleted, btnDelete
 
-        } else if ("Pending".equalsIgnoreCase(status)) {
-            // Pending: Show Processing (to change to Processing status), Completed (to mark as done), and Cancel
-            holder.btnProcessing.setVisibility(View.VISIBLE);
-            holder.btnCompleted.setVisibility(View.GONE);
-            holder.btnCancel.setVisibility(View.VISIBLE);
+        } else {
+            // MEDICAL EXPERT/ADMIN: Full control over medical history
+            if ("Completed".equalsIgnoreCase(status)) {
+                // Completed: No actions needed
+                // All buttons remain GONE
 
-        } else if ("Processing".equalsIgnoreCase(status)) {
-            // Processing: Show Completed (to mark as done) and Cancel
-            holder.btnCompleted.setVisibility(View.VISIBLE);
-            holder.btnCancel.setVisibility(View.GONE);
+            } else if ("Pending".equalsIgnoreCase(status)) {
+                // Pending: MedicalExpert can process or cancel
+                holder.btnProcessing.setVisibility(View.VISIBLE);
+                holder.btnCancel.setVisibility(View.VISIBLE);
 
-        } else if ("Cancelled".equalsIgnoreCase(status)) {
-            // Cancelled: Only show Delete
-            holder.btnDelete.setVisibility(View.VISIBLE);
+            } else if ("Processing".equalsIgnoreCase(status)) {
+                // Processing: MedicalExpert can complete
+                holder.btnCompleted.setVisibility(View.VISIBLE);
+
+            } else if ("Cancelled".equalsIgnoreCase(status)) {
+                // Cancelled: MedicalExpert can delete
+                holder.btnDelete.setVisibility(View.VISIBLE);
+            }
+        }
+
+        // Update button text based on user type for better UX
+        if (isPatient) {
+            holder.btnCancel.setText("Hủy yêu cầu");
+        } else {
+            holder.btnProcessing.setText("Bắt đầu xử lý");
+            holder.btnCompleted.setText("Hoàn thành");
+            holder.btnCancel.setText("Hủy bỏ");
+            holder.btnDelete.setText("Xóa");
         }
     }
 
