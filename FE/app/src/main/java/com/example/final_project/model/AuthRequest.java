@@ -1,20 +1,28 @@
 package com.example.final_project.model;
+import com.google.gson.annotations.SerializedName;
 
 public class AuthRequest {
-    private String username;
+    @SerializedName("email")
+    private String email;
+
+    @SerializedName("password")
     private String password;
 
-    public AuthRequest(String username, String password) {
-        this.username = username;
+    // Constructors
+    public AuthRequest() {}
+
+    public AuthRequest(String email, String password) {
+        this.email = email;
         this.password = password;
     }
 
-    public String getUsername() {
-        return username;
+    // Getters and Setters
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {
@@ -23,5 +31,13 @@ public class AuthRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthRequest{" +
+                "email='" + email + '\'' +
+                ", password='[HIDDEN]'" +
+                '}';
     }
 }

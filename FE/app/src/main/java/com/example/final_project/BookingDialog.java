@@ -224,13 +224,25 @@ public class BookingDialog extends Dialog {
         });
     }
 
+    // Key updates to BookingDialog.java
+
     private void setupForm() {
         tvExpertId.setText(String.valueOf(doctorId));
         Log.d(TAG, "Setting up form for expertId: " + doctorId);
 
+        // Auto-fill patient ID with current logged-in user
+        int currentUserId = LoginActivity.getCurrentUserId(getContext());
+        if (currentUserId != -1) {
+            edtPatientId.setText(String.valueOf(currentUserId));
+            edtPatientId.setEnabled(false); // Disable editing
+            edtPatientId.setAlpha(0.7f); // Visual indication it's disabled
+            Log.d(TAG, "Auto-filled Patient ID with current user: " + currentUserId);
+        }
+
         if (appointmentToEdit != null) {
             btnBook.setText("Cập nhật");
             tvDialogTitle.setText("Sửa lịch hẹn");
+            // Don't override patient ID for existing appointments
             edtPatientId.setText(String.valueOf(appointmentToEdit.getPatientId()));
             edtNote.setText(appointmentToEdit.getNote() != null ? appointmentToEdit.getNote() : "");
 
@@ -239,7 +251,6 @@ public class BookingDialog extends Dialog {
         } else {
             btnBook.setText("Đặt lịch");
             tvDialogTitle.setText("Đặt lịch mới");
-            edtPatientId.setText("1");
             enableHourInput(false);
         }
     }

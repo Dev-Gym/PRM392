@@ -79,6 +79,8 @@ public class CreateScheduleDialog extends Dialog {
         }
     }
 
+    // Key updates to CreateScheduleDialog.java
+
     private void initViews() {
         edtExpertId = findViewById(R.id.edtExpertId);
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
@@ -91,8 +93,20 @@ public class CreateScheduleDialog extends Dialog {
         btnCreate = findViewById(R.id.btnCreate);
         btnCancel = findViewById(R.id.btnCancel);
 
-        // Set default values
-        edtExpertId.setText("3");
+        // Auto-fill Expert ID with current logged-in user if they are MedicalExpert
+        String userType = LoginActivity.getCurrentUserType(getContext());
+        int currentUserId = LoginActivity.getCurrentUserId(getContext());
+
+        if ("MedicalExpert".equals(userType) && currentUserId != -1) {
+            edtExpertId.setText(String.valueOf(currentUserId));
+            edtExpertId.setEnabled(false); // Disable editing
+            edtExpertId.setAlpha(0.7f); // Visual indication it's disabled
+            Log.d(TAG, "Auto-filled Expert ID with current user: " + currentUserId);
+        } else {
+            // Default for other user types or if no user is logged in
+            edtExpertId.setText("3");
+        }
+
         cbIsActive.setChecked(true);
 
         // Update UI based on mode

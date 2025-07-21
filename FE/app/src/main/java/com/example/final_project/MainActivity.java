@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.final_project.model.*;
@@ -18,17 +19,53 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private ApiService apiService;
 
+    private TextView tvWelcome, tvUserInfo;
+    private Button btnLogout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Check if user is logged in
+        if (!LoginActivity.isUserLoggedIn(this)) {
+            goToLoginActivity();
+            return;
+        }
+
         apiService = RetrofitClient.getInstance();
 
+        initViews();
+        setupUserInfo();
+        setupClickListeners();
+
+        // Test API calls
+        testApiCalls();
+    }
+
+    private void initViews() {
+        tvWelcome = findViewById(R.id.tvWelcome);
+        tvUserInfo = findViewById(R.id.tvUserInfo);
+        btnLogout = findViewById(R.id.btnLogout);
+    }
+
+    private void setupUserInfo() {
+        String userName = LoginActivity.getCurrentUserName(this);
+        String userType = LoginActivity.getCurrentUserType(this);
+        String userEmail = LoginActivity.getCurrentUserEmail(this);
+        int userId = LoginActivity.getCurrentUserId(this);
+
+        tvWelcome.setText("Chào mừng, " + userName + "!");
+        tvUserInfo.setText("ID: " + userId + " | " + userType + "\n" + userEmail);
+
+        Log.d(TAG, "User info - ID: " + userId + ", Name: " + userName + ", Type: " + userType);
+    }
+
+    private void setupClickListeners() {
         Button btnDoctors = findViewById(R.id.btnDoctors);
         Button btnHistory = findViewById(R.id.btnHistory);
         Button btnSchedule = findViewById(R.id.btnSchedule);
-        Button btnAllSchedules = findViewById(R.id.btnAllSchedules); // NEW BUTTON
+        Button btnAllSchedules = findViewById(R.id.btnAllSchedules);
 
         btnDoctors.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, MedicalExpertActivity.class);
@@ -48,15 +85,32 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // NEW: All Schedules button
+        // All Schedules button
         btnAllSchedules.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ScheduleActivity.class);
             intent.putExtra("token", "Bearer test-token");
             startActivity(intent);
         });
 
-        // Test API calls
-        testApiCalls();
+        // Logout button
+        btnLogout.setOnClickListener(v -> {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Đăng xuất")
+                    .setMessage("Bạn có chắc muốn đăng xuất?")
+                    .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                        LoginActivity.logout(this);
+                        goToLoginActivity();
+                    })
+                    .setNegativeButton("Hủy", null)
+                    .show();
+        });
+    }
+
+    private void goToLoginActivity() {
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private void testApiCalls() {
