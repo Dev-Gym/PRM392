@@ -80,6 +80,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="8dp"/>
 
+
         <!-- Patient ID -->
         <TextView
             android:id="@+id/lblPatientId"
@@ -88,7 +89,9 @@
             android:text="Patient ID:"
             android:textSize="14sp"
             android:textStyle="bold"
+
             app:layout_constraintTop_toBottomOf="@id/tvUnavailableAppointments"
+
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp"/>

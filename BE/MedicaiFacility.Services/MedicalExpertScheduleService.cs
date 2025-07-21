@@ -23,6 +23,7 @@ namespace MedicaiFacility.Service
             return _repository.GetSchedulesByExpertId(expertId).ToList();
         }
 
+
         public string AddMedicalExpertSchedule(MedicalExpertSchedule schedule)
         {
             var exsitingSchedule = _repository.GetAll().Where(x => x.IsActive==true && x.ExpertId == schedule.ExpertId && x.StartDate.Date == schedule.StartDate.Date);
@@ -30,6 +31,7 @@ namespace MedicaiFacility.Service
             var result =  _repository.AddMedicalExpertSchedule(schedule);
             if (result == null) return "Tạo thất bại";
             return "Tạo thành công";
+
         }
 
         public void DeleteSchedulesByExpertId(int expertId)

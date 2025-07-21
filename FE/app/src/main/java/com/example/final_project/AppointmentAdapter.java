@@ -54,6 +54,7 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
         holder.tvDate.setText(appointment.getStartDate());
         holder.tvStatus.setText("Status: " + appointment.getStatus());
 
+
         // Handle Note display - NEW CODE
         String note = appointment.getNote();
         if (note != null && !note.trim().isEmpty()) {
@@ -180,7 +181,11 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
     }
 
     static class AppointmentViewHolder extends RecyclerView.ViewHolder {
+
         TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus, tvNote; // Added tvNote
+
+        TextView tvAppointmentId, tvPatientId, tvExpertId, tvDate, tvStatus;
+
         Button btnEdit, btnDelete, btnConfirm, btnCancel;
 
         AppointmentViewHolder(@NonNull View itemView) {
@@ -190,7 +195,9 @@ public class AppointmentAdapter extends RecyclerView.Adapter<AppointmentAdapter.
             tvExpertId = itemView.findViewById(R.id.tvExpertId);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvStatus = itemView.findViewById(R.id.tvStatus);
+
             tvNote = itemView.findViewById(R.id.tvNote); // NEW - Add this line
+
             btnEdit = itemView.findViewById(R.id.btnEdit);
             btnDelete = itemView.findViewById(R.id.btnDelete);
             btnConfirm = itemView.findViewById(R.id.btnConfirm);

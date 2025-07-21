@@ -79,6 +79,7 @@ public class CreateScheduleDialog extends Dialog {
         }
     }
 
+
     private void initViews() {
         edtExpertId = findViewById(R.id.edtExpertId);
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
@@ -113,6 +114,7 @@ public class CreateScheduleDialog extends Dialog {
             tvTitle.setText("Sửa Lịch Làm Việc");
             btnCreate.setText("Cập Nhật");
 
+
             // Disable Expert ID editing in edit mode
             edtExpertId.setEnabled(false);
             edtExpertId.setAlpha(0.6f);
@@ -127,6 +129,7 @@ public class CreateScheduleDialog extends Dialog {
             cbIsActive.setAlpha(0.6f);
 
             Log.d(TAG, "Edit mode: Disabled Expert ID, Date selection, and Active status");
+
         } else {
             tvTitle.setText("Tạo Lịch Làm Việc Mới");
             btnCreate.setText("Tạo Lịch");
@@ -134,6 +137,7 @@ public class CreateScheduleDialog extends Dialog {
     }
 
     private void setupClickListeners() {
+
         btnSelectDate.setOnClickListener(v -> {
             // Only allow date selection in create mode
             if (!isEditMode) {
@@ -144,6 +148,7 @@ public class CreateScheduleDialog extends Dialog {
         btnSelectStartTime.setOnClickListener(v -> showTimePickerDialog(true));
         btnSelectEndTime.setOnClickListener(v -> showTimePickerDialog(false));
 
+
         btnCreate.setOnClickListener(v -> {
             if (isEditMode) {
                 updateSchedule();
@@ -151,6 +156,8 @@ public class CreateScheduleDialog extends Dialog {
                 createSchedule();
             }
         });
+
+
 
         btnCancel.setOnClickListener(v -> dismiss());
     }
@@ -394,6 +401,7 @@ public class CreateScheduleDialog extends Dialog {
 
     private void createScheduleWithRequest(ScheduleRequest request) {
         ApiService apiService = RetrofitClient.getInstance();
+
         apiService.createScheduleWithRequest(request).enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
@@ -449,12 +457,15 @@ public class CreateScheduleDialog extends Dialog {
 
                     Log.e(TAG, "Create failed: " + response.code());
                     Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+
                     callback.onScheduleCreated(false);
                 }
             }
 
             @Override
+
             public void onFailure(Call<String> call, Throwable t) {
+
                 Log.e(TAG, "Create error", t);
                 Toast.makeText(getContext(), "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 callback.onScheduleCreated(false);
@@ -472,6 +483,7 @@ public class CreateScheduleDialog extends Dialog {
                     callback.onScheduleCreated(true);
                     dismiss();
                 } else {
+
                     // Handle error response with detailed message
                     String errorMessage = "Lỗi cập nhật";
 
@@ -498,6 +510,7 @@ public class CreateScheduleDialog extends Dialog {
 
                     Log.e(TAG, "Update failed: " + response.code());
                     Toast.makeText(getContext(), errorMessage, Toast.LENGTH_LONG).show();
+
                     callback.onScheduleCreated(false);
                 }
             }

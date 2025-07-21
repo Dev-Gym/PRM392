@@ -21,6 +21,7 @@ namespace MedicaiFacility.DataAccess
         {
             try
             {
+
                 var conflict = _context.Appointments.FirstOrDefault(x =>
              x.Status == "Confirmed" &&
              (
@@ -33,6 +34,9 @@ namespace MedicaiFacility.DataAccess
                 {
                     return null;
                 }
+
+          
+
                 _context.ChangeTracker.Clear();
                 _context.Appointments.Add(appointment);
                 _context.SaveChanges();
@@ -86,7 +90,9 @@ namespace MedicaiFacility.DataAccess
 
         public Appointment Update(Appointment appointment)
         {
+
             _context.ChangeTracker.Clear();
+
             _context.Appointments.Update(appointment);
             _context.SaveChanges();
             return appointment;

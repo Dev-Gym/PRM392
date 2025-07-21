@@ -11,7 +11,9 @@ namespace MedicaiFacility.Service.IService
     {
         List<MedicalExpertSchedule> GetSchedulesByExpertId(int expertId);
 
+
         string AddMedicalExpertSchedule(MedicalExpertSchedule schedule);
+
         MedicalExpertSchedule UpdateMedicalExpertSchedule(MedicalExpertSchedule schedule);
         void DeleteSchedulesByExpertId(int expertId);
         string IsValid(int id, DateTime startTime, DateTime EndTime);

@@ -46,6 +46,7 @@ public class BookingDialog extends Dialog {
     private Button btnBook, btnCancel;
     private TextView tvDialogTitle;
 
+
     // NEW: Add unavailable appointments UI components
     private TextView tvUnavailableAppointments; // TextView để hiển thị appointment đã confirmed
 
@@ -60,6 +61,7 @@ public class BookingDialog extends Dialog {
 
     // NEW: Add unavailable appointments data
     private List<Appointment> unavailableAppointments = new ArrayList<>();
+
 
     public interface BookingCallback {
         void onBookingResult(boolean success);
@@ -98,8 +100,10 @@ public class BookingDialog extends Dialog {
         setupClickListeners();
         setupHourValidation();
 
+
         // NEW: Load unavailable appointments
         loadUnavailableAppointments(); // Load appointment đã confirmed
+
 
         // Populate appointment data if editing
         if (appointmentToEdit != null) {
@@ -119,6 +123,7 @@ public class BookingDialog extends Dialog {
         edtHour = findViewById(R.id.edtHour);
         btnBook = findViewById(R.id.btnBook);
         btnCancel = findViewById(R.id.btnCancel);
+
 
         // NEW: Initialize unavailable appointments TextView
         tvUnavailableAppointments = findViewById(R.id.tvUnavailableAppointments);
@@ -219,6 +224,7 @@ public class BookingDialog extends Dialog {
 
         return "Thời gian không xác định";
     }
+
 
     // ADD METHOD TO POPULATE APPOINTMENT DATA WHEN EDITING
     private void populateAppointmentData(Appointment appointment) {
@@ -795,6 +801,7 @@ public class BookingDialog extends Dialog {
 
             if (appointmentToEdit != null) {
                 // UPDATE logic
+
                 Appointment appointment = new Appointment();
                 appointment.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
                 appointment.setExpertId(doctorId);
@@ -803,9 +810,11 @@ public class BookingDialog extends Dialog {
                 appointment.setStartDate(startDateTime);
                 appointment.setEndDate(endDateTime);
 
+
                 updateAppointment(appointment);
             } else {
                 // CREATE logic
+
                 AppointmentCreateRequest request = new AppointmentCreateRequest();
                 request.setScheduleId(selectedSchedule.getScheduleId());
                 request.setPatientId(Integer.parseInt(edtPatientId.getText().toString().trim()));
@@ -815,13 +824,17 @@ public class BookingDialog extends Dialog {
                 request.setStartDate(startDateTime);
                 request.setEndDate(endDateTime);
 
+
                 Log.d(TAG, "Request object: " + request.toString());
+
                 createAppointment(request);
             }
 
         } catch (NumberFormatException e) {
+
             Log.e(TAG, "Number format error", e);
             Toast.makeText(getContext(), "Lỗi định dạng số", Toast.LENGTH_SHORT).show();
+
         } catch (Exception e) {
             Log.e(TAG, "Error creating appointment", e);
             Toast.makeText(getContext(), "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
