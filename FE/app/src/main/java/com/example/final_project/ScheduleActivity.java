@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.final_project.model.Schedule;
-import com.example.final_project.model.ScheduleRequest;
+import com.example.final_project.model.ExpertSchedule;
 import com.example.final_project.network.ApiService;
 import com.example.final_project.network.RetrofitClient;
 import java.util.ArrayList;
@@ -21,28 +21,36 @@ import retrofit2.Response;
 public class ScheduleActivity extends AppCompatActivity {
     private static final String TAG = "ScheduleActivity";
 
-    private String token;
     private RecyclerView rvSchedules;
     private ScheduleAdapter scheduleAdapter;
     private List<Schedule> scheduleList = new ArrayList<>();
     private Button btnAddSchedule, btnEditSchedule, btnDeleteSchedule;
     private Schedule selectedSchedule = null;
+    private int currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule);
 
-        setTitle("Tất Cả Lịch Làm Việc");
+        // Get current user info
+        currentUserId = LoginActivity.getCurrentUserId(this);
+        String currentUserName = LoginActivity.getCurrentUserName(this);
+
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin user. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        setTitle("Lịch Làm Việc - " + currentUserName);
 
         initViews();
         setupRecyclerView();
         setupClickListeners();
 
-        token = getIntent().getStringExtra("token");
-
-        // Load all schedules when activity opens
-        getSchedules();
+        // Load schedules for current user
+        getUserSchedules();
     }
 
     private void initViews() {
@@ -172,15 +180,14 @@ public class ScheduleActivity extends AppCompatActivity {
                     public void onScheduleCreated(boolean success) {
                         if (success) {
                             Log.d(TAG, "Schedule created successfully, refreshing list");
-                            getSchedules(); // Refresh the list
-                            clearSelection(); // Clear selection after refresh
+                            getUserSchedules(); // Refresh user schedules
+                            clearSelection();
                         }
                     }
                 });
         dialog.show();
     }
 
-    // NEW METHOD: Show edit dialog using CreateScheduleDialog
     private void showEditScheduleDialog(Schedule schedule) {
         CreateScheduleDialog dialog = new CreateScheduleDialog(this,
                 new CreateScheduleDialog.CreateScheduleCallback() {
@@ -188,11 +195,11 @@ public class ScheduleActivity extends AppCompatActivity {
                     public void onScheduleCreated(boolean success) {
                         if (success) {
                             Log.d(TAG, "Schedule updated successfully, refreshing list");
-                            getSchedules(); // Refresh the list
-                            clearSelection(); // Clear selection after refresh
+                            getUserSchedules(); // Refresh user schedules
+                            clearSelection();
                         }
                     }
-                }, schedule); // Pass Schedule object for edit mode
+                }, schedule);
         dialog.show();
     }
 
@@ -202,25 +209,37 @@ public class ScheduleActivity extends AppCompatActivity {
         updateButtonStates();
     }
 
-    private void getSchedules() {
+    private void getUserSchedules() {
         ApiService apiService = RetrofitClient.getInstance();
-        Log.d(TAG, "Loading all schedules...");
+        Log.d(TAG, "Loading schedules for current user ID: " + currentUserId);
 
-        apiService.getSchedules().enqueue(new Callback<List<Schedule>>() {
+        // Use getExpertSchedules API to get current user's schedules
+        apiService.getExpertSchedules(currentUserId).enqueue(new Callback<List<ExpertSchedule>>() {
             @Override
-            public void onResponse(Call<List<Schedule>> call, Response<List<Schedule>> response) {
+            public void onResponse(Call<List<ExpertSchedule>> call, Response<List<ExpertSchedule>> response) {
                 Log.d(TAG, "Response code: " + response.code());
 
                 if (response.isSuccessful() && response.body() != null) {
                     scheduleList.clear();
-                    scheduleList.addAll(response.body());
+
+                    // Convert ExpertSchedule to Schedule
+                    for (ExpertSchedule expertSchedule : response.body()) {
+                        Schedule schedule = convertToSchedule(expertSchedule);
+                        scheduleList.add(schedule);
+                    }
+
                     scheduleAdapter.notifyDataSetChanged();
                     clearSelection();
 
-                    Log.d(TAG, "Loaded " + scheduleList.size() + " schedules");
-                    Toast.makeText(ScheduleActivity.this,
-                            "Tải được " + scheduleList.size() + " lịch làm việc",
-                            Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Loaded " + scheduleList.size() + " schedules for user " + currentUserId);
+
+                    if (scheduleList.isEmpty()) {
+                        Toast.makeText(ScheduleActivity.this,
+                                "Bạn chưa có lịch làm việc nào", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(ScheduleActivity.this,
+                                "Tải được " + scheduleList.size() + " lịch làm việc", Toast.LENGTH_SHORT).show();
+                    }
 
                     // Log schedule details for debugging
                     for (Schedule schedule : scheduleList) {
@@ -232,7 +251,7 @@ public class ScheduleActivity extends AppCompatActivity {
                                 ", Active=" + schedule.isActive());
                     }
                 } else {
-                    Log.e(TAG, "Get schedules failed: " + response.code());
+                    Log.e(TAG, "Get user schedules failed: " + response.code());
                     Toast.makeText(ScheduleActivity.this,
                             "Lỗi tải lịch làm việc: " + response.code(),
                             Toast.LENGTH_SHORT).show();
@@ -248,13 +267,25 @@ public class ScheduleActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<Schedule>> call, Throwable t) {
-                Log.e(TAG, "Get schedules error: " + t.getMessage(), t);
+            public void onFailure(Call<List<ExpertSchedule>> call, Throwable t) {
+                Log.e(TAG, "Get user schedules error: " + t.getMessage(), t);
                 Toast.makeText(ScheduleActivity.this,
                         "Lỗi kết nối: " + t.getMessage(),
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // Helper method to convert ExpertSchedule to Schedule
+    private Schedule convertToSchedule(ExpertSchedule expertSchedule) {
+        Schedule schedule = new Schedule();
+        schedule.setScheduleId(expertSchedule.getScheduleId());
+        schedule.setExpertId(expertSchedule.getExpertId());
+        schedule.setDayOfWeek(expertSchedule.getDayOfWeek());
+        schedule.setStartDate(expertSchedule.getStartDate());
+        schedule.setEndDate(expertSchedule.getEndDate());
+        schedule.setActive(expertSchedule.isActive());
+        return schedule;
     }
 
     private void deleteSchedule(int id) {
@@ -268,9 +299,7 @@ public class ScheduleActivity extends AppCompatActivity {
 
                 if (response.isSuccessful()) {
                     Toast.makeText(ScheduleActivity.this, "Xóa lịch thành công!", Toast.LENGTH_SHORT).show();
-                    // Refresh the entire list instead of removing locally
-                    // because soft delete might change the schedule's status
-                    getSchedules();
+                    getUserSchedules(); // Refresh user schedules
                     clearSelection();
                 } else {
                     Log.e(TAG, "Delete schedule failed: " + response.code());

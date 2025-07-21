@@ -25,20 +25,25 @@ public class MedicalHistoryActivity extends AppCompatActivity {
     private List<MedicalHistory> medicalHistoryList = new ArrayList<>();
     private EditText edtUserId;
     private Button btnFilter;
+    private int currentUserId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_medical_history);
 
-        setTitle("Lịch Cá Nhân");
+        // Get current user info
+        currentUserId = LoginActivity.getCurrentUserId(this);
+        String currentUserName = LoginActivity.getCurrentUserName(this);
+
+        setTitle("Lịch Cá Nhân - " + currentUserName);
 
         initViews();
         setupRecyclerView();
-        setupClickListeners();
+        disableFilterControls();
 
-        // Load all medical history by default
-        getMedicalHistory(-1);
+        // Load medical history for current user automatically
+        getMedicalHistoryForCurrentUser();
     }
 
     private void initViews() {
@@ -49,6 +54,19 @@ public class MedicalHistoryActivity extends AppCompatActivity {
         // Update title
         findViewById(R.id.tvTitleHistory).setVisibility(android.view.View.VISIBLE);
         ((android.widget.TextView) findViewById(R.id.tvTitleHistory)).setText("Lịch Cá Nhân");
+    }
+
+    private void disableFilterControls() {
+        // Auto-fill with current user ID and disable editing
+        edtUserId.setText(String.valueOf(currentUserId));
+        edtUserId.setEnabled(false);
+        edtUserId.setAlpha(0.6f);
+        edtUserId.setHint("User ID hiện tại: " + currentUserId);
+
+        // Hide filter button since we auto-load user's medical history
+        btnFilter.setVisibility(android.view.View.GONE);
+
+        Log.d(TAG, "Filter controls disabled for user ID: " + currentUserId);
     }
 
     private void setupRecyclerView() {
@@ -78,37 +96,17 @@ public class MedicalHistoryActivity extends AppCompatActivity {
         rvMedicalHistory.setAdapter(medicalHistoryAdapter);
     }
 
-    private void setupClickListeners() {
-        btnFilter.setOnClickListener(v -> {
-            String userIdStr = edtUserId.getText().toString().trim();
-            int userId = -1;
-            if (!userIdStr.isEmpty()) {
-                try {
-                    userId = Integer.parseInt(userIdStr);
-                } catch (NumberFormatException e) {
-                    Toast.makeText(this, "UserId phải là số", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-            }
-            getMedicalHistory(userId);
-        });
-    }
-
-    private void getMedicalHistory(int userId) {
-        ApiService apiService = RetrofitClient.getInstance();
-        Call<List<MedicalHistory>> call;
-
-        if (userId > 0) {
-            Log.d(TAG, "Loading medical history for userId: " + userId);
-            // Use method with userId parameter
-            call = apiService.getMedicalHistoryByUserId(userId);
-        } else {
-            Log.d(TAG, "Loading all medical history");
-            // Use existing method - getMedicalHistory() returns all records
-            call = apiService.getMedicalHistory();
+    private void getMedicalHistoryForCurrentUser() {
+        if (currentUserId == -1) {
+            Toast.makeText(this, "Không tìm thấy thông tin user. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
 
-        call.enqueue(new Callback<List<MedicalHistory>>() {
+        ApiService apiService = RetrofitClient.getInstance();
+        Log.d(TAG, "Loading medical history for user ID: " + currentUserId);
+
+        apiService.getMedicalHistoryByUserId(currentUserId).enqueue(new Callback<List<MedicalHistory>>() {
             @Override
             public void onResponse(Call<List<MedicalHistory>> call, Response<List<MedicalHistory>> response) {
                 Log.d(TAG, "API response code: " + response.code());
@@ -118,19 +116,33 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                     medicalHistoryList.addAll(response.body());
                     medicalHistoryAdapter.notifyDataSetChanged();
 
-                    Log.d(TAG, "Loaded " + medicalHistoryList.size() + " medical history records");
-                    Toast.makeText(MedicalHistoryActivity.this,
-                            "Tải được " + medicalHistoryList.size() + " bản ghi", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Loaded " + medicalHistoryList.size() + " medical history records for user " + currentUserId);
+
+                    if (medicalHistoryList.isEmpty()) {
+                        Toast.makeText(MedicalHistoryActivity.this,
+                                "Bạn chưa có lịch sử khám bệnh nào", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MedicalHistoryActivity.this,
+                                "Tải được " + medicalHistoryList.size() + " bản ghi", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     Log.e(TAG, "Get medical history failed: " + response.code());
                     Toast.makeText(MedicalHistoryActivity.this,
                             "Lỗi tải dữ liệu: " + response.code(), Toast.LENGTH_SHORT).show();
+
+                    if (response.errorBody() != null) {
+                        try {
+                            Log.e(TAG, "Error body: " + response.errorBody().string());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error reading errorBody", e);
+                        }
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<List<MedicalHistory>> call, Throwable t) {
-                Log.e(TAG, "Get medical history error: " + t.getMessage());
+                Log.e(TAG, "Get medical history error: " + t.getMessage(), t);
                 Toast.makeText(MedicalHistoryActivity.this,
                         "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
@@ -220,7 +232,7 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     Toast.makeText(MedicalHistoryActivity.this,
                             "Xóa bản ghi thành công!", Toast.LENGTH_SHORT).show();
-                    getMedicalHistory(-1); // Refresh list
+                    getMedicalHistoryForCurrentUser(); // Refresh list with current user's data
                 } else {
                     Log.e(TAG, "Delete failed: " + response.code());
                     Toast.makeText(MedicalHistoryActivity.this,
@@ -249,7 +261,7 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     Toast.makeText(MedicalHistoryActivity.this,
                             "Xử lý bản ghi thành công!", Toast.LENGTH_SHORT).show();
-                    getMedicalHistory(-1); // Refresh list
+                    getMedicalHistoryForCurrentUser(); // Refresh list
                 } else {
                     Log.e(TAG, "Processing failed: " + response.code());
                     Toast.makeText(MedicalHistoryActivity.this,
@@ -278,7 +290,7 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     Toast.makeText(MedicalHistoryActivity.this,
                             "Hủy bản ghi thành công!", Toast.LENGTH_SHORT).show();
-                    getMedicalHistory(-1); // Refresh list
+                    getMedicalHistoryForCurrentUser(); // Refresh list
                 } else {
                     Log.e(TAG, "Cancel failed: " + response.code());
                     Toast.makeText(MedicalHistoryActivity.this,
@@ -311,7 +323,7 @@ public class MedicalHistoryActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     Toast.makeText(MedicalHistoryActivity.this,
                             "Hoàn thành khám bệnh thành công!", Toast.LENGTH_SHORT).show();
-                    getMedicalHistory(-1); // Refresh list
+                    getMedicalHistoryForCurrentUser(); // Refresh list
                 } else {
                     Log.e(TAG, "Completed failed: " + response.code());
                     if (response.errorBody() != null) {

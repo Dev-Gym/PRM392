@@ -96,7 +96,7 @@ namespace MedicalFacilityAPI.Controllers
                 AppointmentId = appointmentId,
                 Description = "đã xác nhận khám rồi",
                 Status = "Pending",
-                Payed = true,
+                Payed = false,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
             };
